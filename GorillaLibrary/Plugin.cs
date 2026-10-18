@@ -79,14 +79,22 @@ internal sealed class Plugin : BaseUnityPlugin
 
         PhotonNetwork.NetworkingClient.EventReceived += OnEvent;
 
-        foreach (var (guid, pluginInfo) in Chainloader.PluginInfos)
+        try
         {
-            var assembly = pluginInfo?.Instance?.GetType().Assembly;
-            if (pluginInfo.Instance is not GorillaUnityPlugin gup) continue;
-
-            ConfigEntry<bool> stateEntry = Config.Bind("State", pluginInfo.Metadata.GUID, true);
-            gup._stateEntry = stateEntry;
-            gup.Enabled = stateEntry.Value;
+            foreach (var (guid, pluginInfo) in Chainloader.PluginInfos)
+            {
+                var assembly = pluginInfo?.Instance?.GetType().Assembly;
+                if (pluginInfo.Instance is not GorillaUnityPlugin gup) continue;
+    
+                ConfigEntry<bool> stateEntry = Config.Bind("State", pluginInfo.Metadata.GUID, true);
+                gup._stateEntry = stateEntry;
+                gup.Enabled = stateEntry.Value;
+            }
+        } 
+        catch (Exception ex)
+        {
+            Logger.LogFatal("Exception thrown while loading GorillaUnityPlugins");
+            Logger.LogError(ex);
         }
 
         sharedObject = new GameObject($"{Info.Metadata.Name} {Info.Metadata.Version}", typeof(NetworkController), typeof(GameModeManager), typeof(ConductBoardManager));

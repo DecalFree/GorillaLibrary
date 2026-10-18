@@ -88,6 +88,9 @@
 		<Reference Include="Unity.Burst.Unsafe">
 			<HintPath>$(GameAssemblyPath)\Unity.Burst.Unsafe.dll</HintPath>
 		</Reference>
+		<Reference Include="Unity.Collections">
+			<HintPath>$(GameAssemblyPath)\Unity.Collections.dll</HintPath>
+		</Reference>
 		<Reference Include="Unity.InputSystem">
 			<HintPath>$(GameAssemblyPath)\Unity.InputSystem.dll</HintPath>
 		</Reference>
