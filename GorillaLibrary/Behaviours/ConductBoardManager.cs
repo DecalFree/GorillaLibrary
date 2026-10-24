@@ -27,7 +27,7 @@ internal class ConductBoardManager : MonoBehaviour
 
     private Transform conductTransform;
 
-    private TextMeshPro baseHeaderText, baseBodyText, headerText, bodyText, footerText;
+    private TextMeshPro baseHeaderText, baseBodyText, oldBodyText, oldHeaderText, headerText, bodyText, footerText;
 
     private int currentPage = 0;
 
@@ -38,13 +38,17 @@ internal class ConductBoardManager : MonoBehaviour
         stumpRootObject = Array.Find(ZoneUtility.Objects, gameObject => gameObject.name == "TreeRoom");
         conductTransform = stumpRootObject.transform.FindChildRecursive("code of conduct");
 
-        baseHeaderText = stumpRootObject.transform.FindChildRecursive("CodeOfConductHeadingText")?.GetComponent<TextMeshPro>();
+        baseHeaderText = stumpRootObject.transform.FindChildRecursive("WelcomeToGorilllaTagHeadingText")?.GetComponent<TextMeshPro>();
+        oldHeaderText = stumpRootObject.transform.FindChildRecursive("CodeOfConductHeadingText")?.GetComponent<TextMeshPro>();
         if (baseHeaderText == null)
         {
-            // Logging.Warning("COC (Code of Conduct) header text is missing");
+            Plugin.Logger.LogWarning("COC (Code of Conduct) header text is missing");
             return;
         }
 
+        oldHeaderText.gameObject.SetActive(false);
+        baseHeaderText.text = oldHeaderText.text;
+        
         GameObject headingTextObject = Instantiate(baseHeaderText.gameObject);
         headingTextObject.transform.position = baseHeaderText.transform.position;
         headingTextObject.transform.rotation = baseHeaderText.transform.rotation;
@@ -72,12 +76,16 @@ internal class ConductBoardManager : MonoBehaviour
         footerText.enabled = true;
         footerText.renderer.enabled = true;
 
-        baseBodyText = stumpRootObject.transform.FindChildRecursive("COCBodyText")?.GetComponent<TextMeshPro>();
+        baseBodyText = stumpRootObject.transform.FindChildRecursive("HeadOutside")?.GetComponent<TextMeshPro>();
+        oldBodyText = stumpRootObject.transform.FindChildRecursive("COCBodyText")?.GetComponent<TextMeshPro>();
         if (baseBodyText == null)
         {
-            // Logging.Warning("COC (Code of Conduct) body text is missing");
+            Plugin.Logger.LogWarning("COC (Code of Conduct) body text is missing");
             return;
         }
+
+        oldBodyText.gameObject.SetActive(false);
+        baseBodyText.text = oldBodyText.text;
 
         GameObject bodyTextObject = Instantiate(baseBodyText.gameObject);
         bodyTextObject.transform.position = baseBodyText.transform.position;
