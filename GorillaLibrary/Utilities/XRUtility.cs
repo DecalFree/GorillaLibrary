@@ -5,6 +5,9 @@ namespace GorillaLibrary.Utilities;
 
 public static class XRUtility
 {
+    /// <summary>
+    /// Get if XR is active
+    /// </summary>
     public static bool IsXRSubsystemActive
     {
         get

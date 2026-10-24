@@ -7,6 +7,9 @@ namespace GorillaLibrary.Utilities;
 
 public static class ZoneUtility
 {
+    /// <summary>
+    /// Returns the instance of ZoneManagement.
+    /// </summary>
     public static ZoneManagement ZoneManagement
     {
         get
@@ -16,6 +19,9 @@ public static class ZoneUtility
         }
     }
 
+    /// <summary>
+    /// Returns all zones in a ZoneData[] dictionary.
+    /// </summary>
     public static ZoneData[] Zones
     {
         get
@@ -27,6 +33,11 @@ public static class ZoneUtility
 
     public static GameObject[] Objects => ZoneManagement.GetField<GameObject[]>("allObjects");
 
+    /// <summary>
+    /// Get a specified zones ZoneData.
+    /// </summary>
+    /// <param name="zone">Zone to get ZoneData from.</param>
+    /// <returns>Specified zones ZoneData.</returns>
     public static ZoneData GetZoneData(GTZone zone)
     {
         ZoneManagement instance = ZoneManagement;

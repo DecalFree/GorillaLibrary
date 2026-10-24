@@ -9,6 +9,13 @@ namespace GorillaLibrary.Utilities;
 
 public static class WebRequestUtility
 {
+    /// <summary>
+    /// Sends an HTTP request and invokes the appropriate callback when it completes.
+    /// </summary>
+    /// <param name="url">The URL to send the request to.</param>
+    /// <param name="model">The request configuration, including the HTTP method, payload, content type, and headers.</param>
+    /// <param name="onSuccess">The callback invoked with the response body when the request succeeds.</param>
+    /// <param name="onError">The callback invoked with the exception when the request fails.</param>
     public static async void SendRequest(string url, WebRequest model, Action<string> onSuccess, Action<Exception> onError)
     {
         UnityWebRequest request = null;

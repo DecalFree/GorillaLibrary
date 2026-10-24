@@ -9,6 +9,12 @@ public static class TextureLoaderUtility
 {
     private static readonly Dictionary<string, TaskCompletionSource<Texture2D>> cache = [];
 
+    /// <summary>
+    /// Loads a texture from a URL, caching the result to avoid duplicate downloads.
+    /// </summary>
+    /// <param name="url">The URL of the image to load.</param>
+    /// <param name="format">The texture format to use when creating the texture.</param>
+    /// <returns>A task representing the asynchronous operation, containing the loaded texture or null if the request fails.</returns
     public static async Task<Texture2D> LoadTexture(string url, TextureFormat format = TextureFormat.RGB24)
     {
         if (cache.TryGetValue(url, out TaskCompletionSource<Texture2D> completionSource))

@@ -17,7 +17,13 @@ public static class WebSocketUtility
     public static Action<WebSocketData, Exception> OnError;
 
     private static readonly Dictionary<string, WebSocketData> _data = [];
-
+    
+    /// <summary>
+    /// Connects to a WebSocket server.
+    /// </summary>
+    /// <param name="url">URL to connect to.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public static async Task<WebSocketData> Connect(string url, CancellationToken cancellationToken = default)
     {
         Uri uri = new(url);
@@ -121,6 +127,12 @@ public static class WebSocketUtility
         await data.Socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Subscribes to a specific WebSocket message type.
+    /// </summary>
+    /// <param name="data">The WebSocket data containing the subscriber registry.</param>
+    /// <param name="messageType">The type of message to subscribe to.</param>
+    /// <param name="handler">The callback invoked when a matching message is received.</param>
     public static void Subscribe(WebSocketData data, string messageType, Action<JObject> handler)
     {
         if (string.IsNullOrEmpty(messageType)) return;
@@ -135,6 +147,12 @@ public static class WebSocketUtility
         list.Add(handler);
     }
 
+    /// <summary>
+    /// Unsubscribes a handler from a specific WebSocket message type.
+    /// </summary>
+    /// <param name="data">The WebSocket data containing the subscriber registry.</param>
+    /// <param name="messageType">The type of message to unsubscribe from.</param>
+    /// <param name="handler">The callback to remove from the subscribers.</param>
     public static void Unsubscribe(WebSocketData data, string messageType, Action<JObject> handler)
     {
         if (string.IsNullOrEmpty(messageType)) return;
@@ -147,11 +165,20 @@ public static class WebSocketUtility
         }
     }
 
+    /// <summary>
+    /// Removes all subscribers from a WebSocket.
+    /// </summary>
+    /// <param name="data">The WebSocket data whose subscribers will be cleared.</param>
     public static void ClearSubscribers(WebSocketData data)
     {
         data.Subscribers.Clear();
     }
 
+    /// <summary>
+    /// Disconnects a WebSocket connection.
+    /// </summary>
+    /// <param name="data">The WebSocket data to disconnect.</param>
+    /// <returns>A task representing the asynchronous disconnect operation.</returns>
     public static async Task Disconnect(WebSocketData data)
     {
         if (data == null) return;

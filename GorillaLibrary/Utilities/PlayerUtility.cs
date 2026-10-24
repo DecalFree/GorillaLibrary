@@ -12,6 +12,13 @@ public static class PlayerUtility
 {
     private static readonly Dictionary<string, (GetAccountInfoResult accountInfo, DateTime cacheTime)> accountInfoCache = [];
 
+    /// <summary>
+    /// Gets a player's PlayFab account information.
+    /// </summary>
+    /// <param name="userId">The PlayFab ID of the player whose account information to retrieve.</param>
+    /// <param name="onAccountInfoRecieved">The callback invoked when account information is received.</param>
+    /// <param name="maxCacheTime">The maximum age of cached account information in minutes before fetching new data.</param>
+    /// <returns>A GetAccountInfoResult of the user requested.</returns>
     public static GetAccountInfoResult GetAccountInfo(string userId, Action<GetAccountInfoResult> onAccountInfoRecieved, double maxCacheTime = double.MaxValue)
     {
         if (accountInfoCache.ContainsKey(userId) && (DateTime.Now - accountInfoCache[userId].cacheTime).TotalMinutes < maxCacheTime)
@@ -36,6 +43,12 @@ public static class PlayerUtility
         return null;
     }
 
+    /// <summary>
+    /// Retrieves a player's PlayFab account information.
+    /// </summary>
+    /// <param name="userId">The PlayFab ID of the player whose account information to retrieve.</param>
+    /// <param name="maxCacheTime">The maximum age of cached account information in minutes before fetching new data.</param>
+    /// <returns>A task containing the player's account information.</returns>
     public static Task<GetAccountInfoResult> GetAccountInfo(string userId, double maxCacheTime = double.MaxValue)
     {
         TaskCompletionSource<GetAccountInfoResult> completionSource = new();
@@ -51,21 +64,44 @@ public static class PlayerUtility
         return completionSource.Task;
     }
 
+    /// <summary>
+    /// Determines whether a network player is tagged in Infection.
+    /// </summary>
+    /// <param name="player">The player to check.</param>
+    /// <param name="tagManager">The Infection game mode manager.</param>
+    /// <returns></returns>
     public static bool IsTagged(NetPlayer player, GorillaTagManager tagManager)
     {
         return tagManager.currentInfected?.Contains(player) ?? false;
     }
 
+    /// <summary>
+    /// Determines whether a network player is the tagger in Infection.
+    /// </summary>
+    /// <param name="player">The player to check.</param>
+    /// <param name="tagManager">The Infection game mode manager.</param>
+    /// <returns></returns>
     public static bool IsTagger(NetPlayer player, GorillaTagManager tagManager)
     {
         return tagManager.currentIt == player;
     }
 
+    /// <summary>
+    /// Determines whether a network player is tagged in Hunt.
+    /// </summary>
+    /// <param name="player">The player to check.</param>
+    /// <param name="huntManager">The Hunt game mode manager.</param>
+    /// <returns></returns>
     public static bool IsTagged(NetPlayer player, GorillaHuntManager huntManager)
     {
         return huntManager.currentHunted?.Contains(player) ?? false;
     }
 
+    /// <summary>
+    /// Determines whether a network player is eligible to participate in the current game mode.
+    /// </summary>
+    /// <param name="player">The player to check.</param>
+    /// <returns></returns>
     public static bool IsParticipant(NetPlayer player)
     {
         return (bool)AccessTools.Method(typeof(GameMode), "CanParticipate").Invoke(null, [player]);

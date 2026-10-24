@@ -40,6 +40,12 @@ public static class RigUtility
         RightFaceButtonTouch = new(NetInputType.FaceButtonTouch, false);
     }
 
+    /// <summary>
+    /// Attempts to retrieve the rig associated with a network player.
+    /// </summary>
+    /// <param name="player">The network player whose rig to retrieve.</param>
+    /// <param name="rig">The retrieved rig, or null if no rig is found.</param>
+    /// <returns>True if the rig was successfully retrieved; otherwise, false.</returns>
     public static bool TryGetRig(NetPlayer player, out RigContainer rig)
     {
         if (VRRigCache.Instance is not VRRigCache instance)
@@ -55,7 +61,12 @@ public static class RigUtility
         rig = (RigContainer)parameters[1];
         return result;
     }
-
+    
+    /// <summary>
+    /// Gets the rig associated with a network player.
+    /// </summary>
+    /// <param name="player">The network player whose rig to retrieve.</param>
+    /// <returns>The player's rig, or null if no rig is found.</returns>
     public static RigContainer GetRig(NetPlayer player) => TryGetRig(player, out RigContainer playerRig) ? playerRig : null;
 
     public class NetInputTracker<T>
