@@ -17,7 +17,7 @@ using UnityEngine;
 
 namespace GorillaLibrary;
 
-[BepInPlugin("dev.gorillalibrary", "GorillaLibrary", "1.0.3")]
+[BepInPlugin("dev.gorillalibrary", "GorillaLibrary", "1.1.0")]
 [BepInDependency(Constants.UtillaGuid, BepInDependency.DependencyFlags.SoftDependency)]
 internal sealed class Plugin : BaseUnityPlugin
 {
