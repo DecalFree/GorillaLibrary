@@ -106,8 +106,7 @@ internal sealed class Plugin : BaseUnityPlugin
             Logger.LogError(ex);
         }
 
-        sharedObject = new GameObject($"{Info.Metadata.Name} {Info.Metadata.Version}", typeof(NetworkController), typeof(GameModeManager));
-        sharedObject.AddComponent<ConductBoardManager>();
+        sharedObject = new GameObject($"{Info.Metadata.Name} {Info.Metadata.Version}", typeof(NetworkController), typeof(GameModeManager), typeof(ConductBoardManager));
         DontDestroyOnLoad(sharedObject);
 
         Events.Core.OnGameInitialized?.Invoke();
