@@ -1,0 +1,136 @@
+﻿using BepInEx;
+using BepInEx.Bootstrap;
+using BepInEx.Configuration;
+using BepInEx.Logging;
+using ExitGames.Client.Photon;
+using GorillaLibrary.Behaviours;
+using GorillaLibrary.Patches;
+using GorillaLibrary.Utilities;
+using HarmonyLib;
+using Photon.Pun;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using UnityEngine;
+
+namespace GorillaLibrary;
+
+[BepInPlugin("dev.gorillalibrary", "GorillaLibrary", "1.0.3")]
+[BepInDependency(Constants.UtillaGuid, BepInDependency.DependencyFlags.SoftDependency)]
+internal sealed class Plugin : BaseUnityPlugin
+{
+    internal static Plugin Instance;
+
+    internal static new ManualLogSource Logger;
+
+    private GameObject sharedObject;
+
+    public void Awake()
+    {
+        Instance = this;
+        Logger = base.Logger;
+
+        RuntimeHelpers.RunClassConstructor(typeof(Events).TypeHandle);
+
+        MothershipClientApiUnity.OnMessageNotificationSocket += (notif, _) => Events.Server.OnMothershipMessageRecieved.Invoke(notif.Title, notif.Body);
+
+        Harmony harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
+        GameModeManager.DeactivateUtillaSelector(harmony);
+        ConductBoardManager.DisableUtillaVersionText(harmony);
+
+        if (AccessTools.Method(typeof(GorillaTagger), "OnGameOverlayActivated") is MethodInfo method)
+        {
+            harmony.Patch(method, postfix: new(AccessTools.Method(typeof(GameOverlayPatch), nameof(GameOverlayPatch.Postfix)), priority: Priority.First));
+        }
+
+        Assembly gtAssembly = typeof(GorillaGameManager).Assembly;
+        Type gtModeSerializeType = gtAssembly.GetType("GameModeSerializer");
+
+        if (gtModeSerializeType != null)
+        {
+            harmony.Patch(AccessTools.Method(gtModeSerializeType, "BroadcastTag", parameters: [typeof(NetPlayer), typeof(NetPlayer), typeof(PhotonMessageInfo)]), postfix: new(AccessTools.Method(typeof(GameManagerPatches), nameof(GameManagerPatches.ClientTagPatch))));
+            harmony.Patch(AccessTools.Method(gtModeSerializeType, "BroadcastRoundComplete", parameters: [typeof(PhotonMessageInfoWrapped)]), postfix: new(AccessTools.Method(typeof(GameManagerPatches), nameof(GameManagerPatches.ClientRoundCompletePatch))));
+        }
+    }
+
+    public void Update()
+    {
+        if (!CoreUtility.Initialized) return;
+        InputUtility.Update();
+    }
+
+    public void OnGameInitialized()
+    {
+        NetworkSystem.Instance.OnMultiplayerStarted += Events.Room.OnRoomJoined;
+        NetworkSystem.Instance.OnReturnedToSinglePlayer += Events.Room.OnRoomLeft;
+        NetworkSystem.Instance.OnPlayerJoined += Events.Player.OnPlayerEnteredRoom;
+        NetworkSystem.Instance.OnPlayerLeft += Events.Player.OnPlayerLeftRoom;
+
+        ZoneManagement.OnZoneChange += zoneData =>
+        {
+            IEnumerable<GTZone> activeZones = zoneData.Where(data => data.active).Select(data => data.zone);
+            Events.Zone.OnZonesChanged?.Invoke(activeZones);
+        };
+
+        CoreUtility.Initialize();
+        InputUtility.Initialize();
+        RigUtility.Initialize();
+        SystemUtility.Initialize();
+
+        PhotonNetwork.NetworkingClient.EventReceived += OnEvent;
+
+        try
+        {
+            foreach (var (guid, pluginInfo) in Chainloader.PluginInfos)
+            {
+                var assembly = pluginInfo?.Instance?.GetType().Assembly;
+                if (pluginInfo.Instance is not GorillaUnityPlugin gup) continue;
+    
+                ConfigEntry<bool> stateEntry = Config.Bind("State", pluginInfo.Metadata.GUID, true);
+                gup._stateEntry = stateEntry;
+                gup.Enabled = stateEntry.Value;
+
+                try { gup.OnPlayerSpawned(); }
+                catch (Exception ex)
+                {
+                    Logger.LogFatal($"Error in OnPlayerSpawned method of {gup.Info.Metadata.GUID} {gup.Info.Metadata.Version}:");
+                    Logger.LogError(ex);
+                }
+            }
+        } 
+        catch (Exception ex)
+        {
+            Logger.LogFatal("Exception thrown while loading GorillaUnityPlugins");
+            Logger.LogError(ex);
+        }
+
+        sharedObject = new GameObject($"{Info.Metadata.Name} {Info.Metadata.Version}", typeof(NetworkController), typeof(GameModeManager), typeof(ConductBoardManager));
+        DontDestroyOnLoad(sharedObject);
+
+        Events.Core.OnGameInitialized?.Invoke();
+    }
+
+    private void OnEvent(EventData data)
+    {
+        try
+        {
+            switch (data.Code)
+            {
+                case 255:
+                    Hashtable hashtable = (Hashtable)data[249];
+                    if (NetworkSystem.Instance is NetworkSystem netSys && netSys.GetPlayer(data.Sender) is NetPlayer netPlayer && hashtable.TryGetValue(byte.MaxValue, out object value) && value is string nickName)
+                    {
+                        Events.Player.OnPlayerNameChanged?.Invoke(netPlayer, nickName);
+                    }
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogFatal("Exception thrown when identifying changed player name");
+            Logger.LogError(ex);
+        }
+    }
+}
