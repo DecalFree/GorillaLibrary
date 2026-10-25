@@ -8,9 +8,6 @@ namespace GorillaLibrary.Patches;
 [HarmonyPatch(typeof(GameModeString), "FromString")]
 internal class PropertyStringSeparatorTranspiler
 {
-    [HarmonyPrepare]
-    private static bool Prepare() => !GorillaLibrary.Behaviours.GameModeManager.HasUtilla;
-
     public static string Separator;
 
     internal static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)

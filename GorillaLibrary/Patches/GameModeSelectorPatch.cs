@@ -8,9 +8,6 @@ namespace GorillaLibrary.Patches
     [HarmonyPatch(typeof(GameModeSelectorButtonLayout))]
     internal class GameModeSelectorPatch
     {
-        [HarmonyPrepare]
-        private static bool Prepare() => !GorillaLibrary.Behaviours.GameModeManager.HasUtilla;
-
         [HarmonyPatch("OnEnable"), HarmonyPrefix]
         public static bool OnEnablePatch(GameModeSelectorButtonLayout __instance)
         {

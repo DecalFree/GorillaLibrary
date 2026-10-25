@@ -37,7 +37,6 @@ internal class GameModeManager : MonoBehaviour
     private List<PluginInfo> pluginInfos;
 
     private Dictionary<int, GorillaGameManager> gameModeTable;
-    private readonly HashSet<string> utillaModeIds = [];
 
     public void Awake()
     {
@@ -50,16 +49,12 @@ internal class GameModeManager : MonoBehaviour
         }
         Instance = this;
 
-        if (!HasUtilla)
-        {
-            gameModeTable = (Dictionary<int, GorillaGameManager>)AccessTools.Field(typeof(GameMode), "gameModeTable").GetValue(null);
+        gameModeTable = (Dictionary<int, GorillaGameManager>)AccessTools.Field(typeof(GameMode), "gameModeTable").GetValue(null);
+        customGameModeContainer = new GameObject("GorillaLibrary Custom Game Modes"); // rip Utilla Custom Game Modes
+        customGameModeContainer.transform.SetParent(((GameMode)AccessTools.Field(typeof(GameMode), "instance").GetValue(null)).gameObject.transform);
 
-            customGameModeContainer = new GameObject("Utilla Custom Game Modes");
-            customGameModeContainer.transform.SetParent(((GameMode)AccessTools.Field(typeof(GameMode), "instance").GetValue(null)).gameObject.transform);
-
-            string currentGameMode = PlayerPrefs.GetString(GorillaComputerPatches.ModePreferenceKey, GameModeType.Infection.ToString());
-            GorillaComputer.instance.currentGameMode.Value = currentGameMode;
-        }
+        string currentGameMode = PlayerPrefs.GetString(GorillaComputerPatches.ModePreferenceKey, GameModeType.Infection.ToString());
+        GorillaComputer.instance.currentGameMode.Value = currentGameMode;
 
         GameModeType[] gameModeTypes = [.. Enum.GetValues(typeof(GameModeType)).Cast<GameModeType>()];
         for (int i = 0; i < gameModeTypes.Length; i++)
@@ -81,10 +76,8 @@ internal class GameModeManager : MonoBehaviour
         Plugin.Logger.LogMessage($"Custom Game Modes: {string.Join(", ", CustomGameModes.Select(mode => mode.DisplayName).Select(displayName => string.Format("\"{0}\"", displayName)))}");
         Gamemodes.AddRange(ModdedGamemodes.Concat(CustomGameModes));
         
-        // Utilla gamemode injection stuff
-        // For people who care, it was almost a 1:1 copy of Cardboard's same code - Binx
-        if (HasUtilla) StartCoroutine(InjectGamemodesIntoUtilla());
-        else Gamemodes.ForEach(AddGamemodeToPrefabPool);
+        Gamemodes.ForEach(AddGamemodeToPrefabPool);
+        if (HasUtilla) StartCoroutine(ImportUtillaGamemodes());
 
         Plugin.Logger.LogMessage($"Game Modes: {string.Join(", ", Gamemodes.Select(mode => mode.DisplayName).Select(displayName => string.Format("\"{0}\"", displayName)))}");
 
@@ -111,187 +104,91 @@ internal class GameModeManager : MonoBehaviour
             plugin.Instance != null ? plugin.Instance.GetType().Assembly : null;
     }
 
-    private IEnumerator InjectGamemodesIntoUtilla()
+    internal static void DeactivateUtillaSelector(Harmony harmony)
     {
-        foreach (GameModeWrapper mode in CustomGameModes)
-        {
-            PluginInfo[] owners = [ .. pluginInfos.Where(info => info.Gamemodes.Contains(mode)) ];
-
-            if (owners.Length == 0)
-                continue;
-
-            Action<string> onJoin = null;
-            Action<string> onLeave = null;
-
-            foreach (PluginInfo owner in owners)
-            {
-                onJoin += owner.OnGamemodeJoin;
-                onLeave += owner.OnGamemodeLeave;
-            }
-
-            yield return RegisterWithUtilla(owners[0].Plugin, mode, onJoin, onLeave);
-        }
-    }
-
-    private IEnumerator RegisterWithUtilla(BaseUnityPlugin owner, GameModeWrapper mode, Action<string> onJoin, Action<string> onLeave)
-    {
-        while (UtillaAssembly() != null)
-        {
-            string id;
-            try
-            {
-                id = RegisterWithUtilla(owner, mode.ID, mode.DisplayName,
-                    mode.BaseGameMode, onJoin, onLeave, mode.GameManager);
-            }
-            catch (Exception ex)
-            {
-                Plugin.Logger.LogError(ex);
-                yield break;
-            }
-
-            if (id != null)
-            {
-                utillaModeIds.Add(id);
-                yield break;
-            }
-
-            yield return null;
-        }
-    }
-
-    public static string RegisterWithUtilla(
-        BaseUnityPlugin owner,
-        string id,
-        string name,
-        GameModeType? baseMode,
-        Action<string> onJoin,
-        Action<string> onLeave,
-        Type gameManager = null)
-    {
-        // It looks ugly but it works so well
-        if (owner == null)
-            throw new ArgumentNullException(nameof(owner));
-        if (string.IsNullOrWhiteSpace(id))
-            throw new ArgumentException("A mode ID is required.", nameof(id));
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("A mode name is required.", nameof(name));
-
         Assembly assembly = UtillaAssembly();
-        if (assembly == null)
-            return null;
+        if (assembly == null) return;
+
+        // there are many utillas with seperate patches so we just target the uh-oh
+        // patches we know of here
+
+        string[] patchTypes =
+        [
+            "Utilla.Patches.GameModeSelectorPatch",
+            "Utilla.Patches.VirtualStumpSelectorPatch",
+            "Utilla.Patches.GorillaComputerPatches",
+            "Utilla.Patches.DesiredGameModePatches",
+            "Utilla.Patches.GameModeSearchPatch",
+            "Utilla.Patches.EnumNamePatch",
+            "Utilla.Patches.EnumParsePatch",
+            "Utilla.Patches.PropertyStringContainsModePatch",
+            "Utilla.Patches.PropertyStringSeparatorTranspiler"
+        ];
+
+        foreach (MethodBase original in Harmony.GetAllPatchedMethods().ToArray())
+        {
+            var patches = Harmony.GetPatchInfo(original);
+
+            foreach (var patch in patches.Prefixes.Concat(patches.Postfixes).Concat(patches.Transpilers).Concat(patches.Finalizers))
+            {
+                Type type = patch.PatchMethod.DeclaringType;
+
+                if (type?.Assembly == assembly && patchTypes.Contains(type.FullName))
+                    harmony.Unpatch(original, patch.PatchMethod);
+            }
+        }
+
+        Type selectorType = assembly.GetType("Utilla.Behaviours.UtillaGamemodeSelector");
+        
+        if (selectorType == null) return;
+        foreach (Behaviour selector in Resources.FindObjectsOfTypeAll(selectorType))
+            selector.enabled = false;
+    }
+
+    private IEnumerator ImportUtillaGamemodes()
+    {
+        Assembly assembly = UtillaAssembly();
+
+        if (assembly == null) yield break;
 
         Type managerType = assembly.GetType("Utilla.Behaviours.GamemodeManager", true);
+        object initialization = Get(managerType, null, "Initialization");
+        Task task = (Task)Get(initialization.GetType(), initialization, "Task");
+
+        while (!task.IsCompleted) yield return null;
+
+        if (task.Status != TaskStatus.RanToCompletion) yield break;
 
         object manager = Get(managerType, null, "Instance");
-        object initialization = Get(managerType, null, "Initialization");
-        var task = initialization == null ? null :
-            Get(initialization.GetType(), initialization, "Task") as Task;
 
-        if (manager == null || task == null ||
-            task.Status != TaskStatus.RanToCompletion)
-            return null;
-
-        if (NetworkSystem.Instance == null)
-            return null;
-        if (NetworkSystem.Instance.InRoom)
-            throw new InvalidOperationException("Leave the room before registering a mode.");
-
-        Type modeType = assembly.GetType("Utilla.Models.Gamemode", true);
-        Type entryType = assembly.GetType("Utilla.PluginInfo", true);
-        Type selectorType = assembly.GetType("Utilla.Behaviours.UtillaGamemodeSelector", true);
-
-        var modes = (IList)Get(managerType, manager, "Gamemodes");
-        var customModes = (IList)Get(managerType, manager, "CustomGameModes");
-        var entries = (IList)Get(managerType, manager, "pluginInfos");
-
-        ConstructorInfo constructor = modeType.GetConstructor(new[]
+        foreach (object mode in (IEnumerable)Get(managerType, manager, "CustomGameModes"))
         {
-            typeof(string), typeof(string), gameManager == null ? typeof(GameModeType?) : typeof(Type)
-        });
-        if (constructor == null)
-            throw new MissingMethodException(modeType.FullName, ".ctor");
+            Type type = mode.GetType();
+            string id = (string)Get(type, mode, "ID");
 
-        MethodInfo addPrefab = Method(managerType,
-            "AddGamemodeToPrefabPool", modeType);
+            if (Gamemodes.Any(existing => existing.ID == id)) continue;
 
-        object mode = constructor.Invoke(new object[]
-        {
-            id, name, gameManager == null ? (object)baseMode : gameManager
-        });
-        string registeredId = (string)Get(modeType, mode, "ID");
+            string name = (string)Get(type, mode, "DisplayName");
+            Type gameManager = (Type)Get(type, mode, "GameManager");
 
-        foreach (object existing in modes)
-        {
-            if (string.Equals((string)Get(modeType, existing, "ID"),
-                registeredId, StringComparison.Ordinal))
-                throw new InvalidOperationException("Mode already registered: " + registeredId);
+            GameModeWrapper wrapper = gameManager != null
+                ? new GameModeWrapper(id, name, gameManager)
+                : new GameModeWrapper(id, name, (GameModeType?)Get(type, mode, "BaseGamemode"));
+
+            CustomGameModes.Add(wrapper);
+            Gamemodes.Add(wrapper);
         }
 
-        if (GameMode.gameModeKeyByName.ContainsKey(registeredId))
-            throw new InvalidOperationException("Mode ID is already in use: " + registeredId);
-        if (baseMode.HasValue && !GameMode.gameModeKeyByName.ContainsKey(baseMode.ToString()))
-            throw new InvalidOperationException("Base mode is not registered: " + baseMode);
-
-        Array supportedModes = Array.CreateInstance(modeType, 1);
-        supportedModes.SetValue(mode, 0);
-
-        object entry = Activator.CreateInstance(entryType);
-        Set(entryType, entry, "Plugin", owner);
-        Set(entryType, entry, "Gamemodes", supportedModes);
-        Set(entryType, entry, "OnGamemodeJoin", onJoin);
-        Set(entryType, entry, "OnGamemodeLeave", onLeave);
-
-        bool added = false;
-        try
+        foreach (GameModeSelector selector in Resources.FindObjectsOfTypeAll<GameModeSelector>())
         {
-            addPrefab.Invoke(manager, new[] { mode });
-            if (!GameMode.gameModeKeyByName.ContainsKey(registeredId))
-                throw new InvalidOperationException("Provider did not register " + registeredId);
+            selector.SelectorGameModes.Clear();
 
-            modes.Add(mode);
-            customModes.Add(mode);
-            entries.Add(entry);
-            added = true;
+            if (selector.PageCapacity <= 0) continue;
+
+            selector.PageCount = Math.Max(1, (selector.GetSelectorGameModes().Count + selector.PageCapacity - 1) / selector.PageCapacity);
+            selector.CurrentPage = 0;
+            selector.ShowPage();
         }
-        finally
-        {
-            if (!added)
-            {
-                modes.Remove(mode);
-                customModes.Remove(mode);
-                entries.Remove(entry);
-
-                GameMode.gameModeKeyByName.Remove(registeredId);
-            }
-        }
-
-        foreach (UnityEngine.Object selector in Resources.FindObjectsOfTypeAll(selectorType))
-        {
-            try { RefreshSelector(selectorType, selector); }
-            catch { }
-        }
-
-        return registeredId;
-    }
-
-    private static void RefreshSelector(Type type, object selector)
-    {
-        ((IDictionary)Get(type, selector, "SelectorGameModes")).Clear();
-
-        int capacity = (int)Get(type, selector, "PageCapacity");
-        if (capacity <= 0 || Get(type, selector, "Layout") == null)
-            return;
-
-        var modes = (IList)Method(type, "GetSelectorGameModes").Invoke(selector, null);
-        Set(type, selector, "PageCount", Math.Max(1, (modes.Count + capacity - 1) / capacity));
-        Set(type, selector, "CurrentPage", 0);
-        Method(type, "ShowPage").Invoke(selector, null);
-    }
-
-    private static MethodInfo Method(Type type, string name, params Type[] parameters)
-    {
-        return type.GetMethod(name, UtillaFlags, null, parameters, null)
-            ?? throw new MissingMethodException(type.FullName, name);
     }
 
     private static object Get(Type type, object target, string name)
@@ -305,21 +202,6 @@ internal class GameModeManager : MonoBehaviour
             return field.GetValue(target);
 
         throw new MissingMemberException(type.FullName, name);
-    }
-
-    private static void Set(Type type, object target, string name, object value)
-    {
-        PropertyInfo property = type.GetProperty(name, UtillaFlags);
-        if (property != null)
-        {
-            property.SetValue(target, value, null);
-            return;
-        }
-
-        FieldInfo field = type.GetField(name, UtillaFlags);
-        if (field == null)
-            throw new MissingMemberException(type.FullName, name);
-        field.SetValue(target, value);
     }
 
     public List<GameModeWrapper> GetGamemodes(List<PluginInfo> infos)
@@ -495,10 +377,6 @@ internal class GameModeManager : MonoBehaviour
 
         foreach (var pluginInfo in pluginInfos)
         {
-            // Utilla invokes callbacks for injected modes; keep local modded-mode callbacks.
-            if (pluginInfo.Gamemodes.Any(mode => utillaModeIds.Contains(mode.ID) && gamemode.Contains(mode.ID)))
-                continue;
-
             Plugin.Logger.LogMessage($"Plugin {pluginInfo}");
 
             if (pluginInfo.Gamemodes.Any(x => gamemode.Contains(x.ID)))
@@ -528,10 +406,6 @@ internal class GameModeManager : MonoBehaviour
 
         foreach (var pluginInfo in pluginInfos)
         {
-            // Utilla invokes callbacks for injected modes; keep local modded-mode callbacks.
-            if (pluginInfo.Gamemodes.Any(mode => utillaModeIds.Contains(mode.ID) && gamemode.Contains(mode.ID)))
-                continue;
-
             if (pluginInfo.Gamemodes.Any(x => gamemode.Contains(x.ID)))
             {
                 try

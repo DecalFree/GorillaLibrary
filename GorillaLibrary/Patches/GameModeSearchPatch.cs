@@ -6,9 +6,6 @@ namespace GorillaLibrary.Patches;
 [HarmonyPatch(typeof(GorillaGameModes.GameMode), "FindGameModeInPropertyString")]
 internal class GameModeSearchPatch
 {
-    [HarmonyPrepare]
-    private static bool Prepare() => !GorillaLibrary.Behaviours.GameModeManager.HasUtilla;
-
     public static bool Prefix(string gmString, ref string __result)
     {
 

@@ -1,6 +1,8 @@
-﻿using GorillaLibrary.Extensions;
+﻿using BepInEx.Bootstrap;
+using GorillaLibrary.Extensions;
 using GorillaLibrary.Utilities;
 using GorillaTag;
+using HarmonyLib;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -30,6 +32,29 @@ internal class ConductBoardManager : MonoBehaviour
     private TextMeshPro baseHeaderText, baseBodyText, oldBodyText, oldHeaderText, headerText, bodyText, footerText;
 
     private int currentPage = 0;
+
+    internal static void DisableUtillaVersionText(Harmony harmony)
+    {
+        if (!Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out var plugin) ||
+            plugin.Instance == null) return;
+
+        Type managerType = plugin.Instance.GetType().Assembly.GetType("Utilla.Behaviours.VersionCheckManager");
+        if (managerType == null) return;
+
+        var start = AccessTools.Method(managerType, "Start");
+        if (start != null)
+            harmony.Patch(start, prefix: new HarmonyMethod(typeof(ConductBoardManager), nameof(SkipUtillaVersionText)));
+
+        var footerField = AccessTools.Field(managerType, "footerText");
+        foreach (Behaviour manager in Resources.FindObjectsOfTypeAll(managerType))
+        {
+            manager.enabled = false;
+            if (footerField?.GetValue(manager) is TMP_Text text && text != null)
+                text.gameObject.SetActive(false);
+        }
+    }
+
+    private static bool SkipUtillaVersionText() => false;
 
     public void Start()
     {
@@ -75,6 +100,9 @@ internal class ConductBoardManager : MonoBehaviour
         footerText.characterSpacing = -11.5f;
         footerText.enabled = true;
         footerText.renderer.enabled = true;
+
+        if (Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out var utillaPlugin))
+            footerText.text += $" (UT {utillaPlugin.Metadata.Version})";
 
         baseBodyText = stumpRootObject.transform.FindChildRecursive("HeadOutside")?.GetComponent<TextMeshPro>();
         oldBodyText = stumpRootObject.transform.FindChildRecursive("COCBodyText")?.GetComponent<TextMeshPro>();
@@ -210,7 +238,10 @@ internal class ConductBoardManager : MonoBehaviour
         {
             footerText.color = Color.red;
             footerText.fontSize *= 0.85f;
-            footerText.text = $"{info.Name} {info.Version}: Out of Date".ToUpper();
+            footerText.text += $"{info.Name} {info.Version} - Out Of Date".ToUpper();
+
+            if (Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out var utillaPlugin))
+                footerText.text += $" (UT {utillaPlugin.Metadata.Version})";
         }
     }
 

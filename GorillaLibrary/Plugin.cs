@@ -37,6 +37,8 @@ internal sealed class Plugin : BaseUnityPlugin
         MothershipClientApiUnity.OnMessageNotificationSocket += (notif, _) => Events.Server.OnMothershipMessageRecieved.Invoke(notif.Title, notif.Body);
 
         Harmony harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
+        GameModeManager.DeactivateUtillaSelector(harmony);
+        ConductBoardManager.DisableUtillaVersionText(harmony);
 
         if (AccessTools.Method(typeof(GorillaTagger), "OnGameOverlayActivated") is MethodInfo method)
         {
@@ -105,7 +107,7 @@ internal sealed class Plugin : BaseUnityPlugin
         }
 
         sharedObject = new GameObject($"{Info.Metadata.Name} {Info.Metadata.Version}", typeof(NetworkController), typeof(GameModeManager));
-        if (!GameModeManager.HasUtilla) sharedObject.AddComponent<ConductBoardManager>();
+        sharedObject.AddComponent<ConductBoardManager>();
         DontDestroyOnLoad(sharedObject);
 
         Events.Core.OnGameInitialized?.Invoke();

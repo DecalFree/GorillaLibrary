@@ -15,9 +15,6 @@ namespace GorillaLibrary.Patches
     [HarmonyPatch(typeof(GorillaComputer))]
     internal static class GorillaComputerPatches
     {
-        [HarmonyPrepare]
-        private static bool Prepare() => !GorillaLibrary.Behaviours.GameModeManager.HasUtilla;
-
         public static bool AllowSettingMode { get; internal set; }
 
         public static string ModePreferenceKey { get; private set; }

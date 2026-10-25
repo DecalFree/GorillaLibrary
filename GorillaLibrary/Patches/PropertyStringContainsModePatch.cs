@@ -8,9 +8,6 @@ namespace GorillaLibrary.Patches;
 [HarmonyPatch(typeof(GameModeString), "DoesPropertyStringContainGameMode")]
 internal class PropertyStringContainsModePatch
 {
-    [HarmonyPrepare]
-    private static bool Prepare() => !GorillaLibrary.Behaviours.GameModeManager.HasUtilla;
-
     public static bool Prefix(string propertyString, string gameMode, ref bool __result)
     {
         string separator = PropertyStringSeparatorTranspiler.Separator;
