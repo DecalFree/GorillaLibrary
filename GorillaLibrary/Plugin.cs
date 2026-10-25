@@ -3,7 +3,6 @@ using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using ExitGames.Client.Photon;
-using GorillaLibrary.Attributes;
 using GorillaLibrary.Behaviours;
 using GorillaLibrary.Patches;
 using GorillaLibrary.Utilities;
