@@ -19,7 +19,7 @@ namespace GorillaLibrary;
 
 [BepInPlugin("dev.gorillalibrary", "GorillaLibrary", "1.0.3")]
 [BepInDependency(Constants.UtillaGuid, BepInDependency.DependencyFlags.SoftDependency)]
-internal sealed partial class Plugin : BaseUnityPlugin
+internal sealed class Plugin : BaseUnityPlugin
 {
     internal static Plugin Instance;
 
