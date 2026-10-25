@@ -3,7 +3,7 @@
     <File Path=".editorconfig" />
     <File Path="Directory.Build.props" />
   </Folder>
-  <Project Path="GorillaLibrary.Wardrobe/GorillaLibrary.Wardrobe.csproj" Id="9badd0ce-85e7-4c31-9ad0-b9bf58a0e82f" />
-  <Project Path="GorillaLibrary/GorillaLibrary.csproj" />
+  <Project Path="src/GorillaLibrary.Wardrobe/GorillaLibrary.Wardrobe.csproj" Id="9badd0ce-85e7-4c31-9ad0-b9bf58a0e82f" />
+  <Project Path="src/GorillaLibrary/GorillaLibrary.csproj" />
 </Solution>
 
