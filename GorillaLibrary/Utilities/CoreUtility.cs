@@ -1,7 +1,6 @@
 ﻿using GorillaNetworking;
 using System;
 using System.Runtime.InteropServices;
-using static SteamVR_Utils;
 
 namespace GorillaLibrary.Utilities;
 
