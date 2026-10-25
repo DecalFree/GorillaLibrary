@@ -8,6 +8,9 @@ namespace GorillaLibrary.Patches
     [HarmonyPatch(typeof(CustomMapModeSelector)), HarmonyWrapSafe]
     internal class VirtualStumpSelectorPatch
     {
+        [HarmonyPrepare]
+        private static bool Prepare() => !GorillaLibrary.Behaviours.GameModeManager.HasUtilla;
+
         [HarmonyPatch(nameof(CustomMapModeSelector.OnEnable)), HarmonyPrefix]
         public static void OnEnablePrefix()
         {

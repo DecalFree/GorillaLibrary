@@ -9,6 +9,9 @@ namespace GorillaLibrary.Patches;
 [HarmonyPatch]
 internal class EnumParsePatch
 {
+    [HarmonyPrepare]
+    private static bool Prepare() => !GorillaLibrary.Behaviours.GameModeManager.HasUtilla;
+
     public static MethodBase TargetMethod()
     {
         return typeof(Enum)

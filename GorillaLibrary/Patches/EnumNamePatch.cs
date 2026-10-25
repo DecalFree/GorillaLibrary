@@ -11,6 +11,9 @@ namespace GorillaLibrary.Patches;
 [HarmonyPatch]
 public class EnumNamePatch
 {
+    [HarmonyPrepare]
+    private static bool Prepare() => !GorillaLibrary.Behaviours.GameModeManager.HasUtilla;
+
     public static MethodBase TargetMethod()
     {
         return typeof(EnumUtilExt)

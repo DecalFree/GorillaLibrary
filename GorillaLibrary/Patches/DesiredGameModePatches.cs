@@ -9,6 +9,9 @@ namespace GorillaLibrary.Patches
     [HarmonyPatch(typeof(GorillaNetworkJoinTrigger))]
     internal class DesiredGameModePatches
     {
+        [HarmonyPrepare]
+        private static bool Prepare() => !GorillaLibrary.Behaviours.GameModeManager.HasUtilla;
+
         [HarmonyPatch(nameof(GorillaNetworkJoinTrigger.GetDesiredGameType)), HarmonyPrefix]
         public static bool DesiredGameTypePatch(GorillaNetworkJoinTrigger __instance, ref string __result, ref GTZone ___zone)
         {

@@ -18,8 +18,8 @@ using UnityEngine;
 namespace GorillaLibrary;
 
 [BepInPlugin("dev.gorillalibrary", "GorillaLibrary", "1.0.3")]
-[BepInIncompatibility("org.legoandmars.gorillatag.utilla")]
-internal sealed class Plugin : BaseUnityPlugin
+[BepInDependency(Constants.UtillaGuid, BepInDependency.DependencyFlags.SoftDependency)]
+internal sealed partial class Plugin : BaseUnityPlugin
 {
     internal static Plugin Instance;
 
@@ -75,6 +75,7 @@ internal sealed class Plugin : BaseUnityPlugin
         CoreUtility.Initialize();
         InputUtility.Initialize();
         RigUtility.Initialize();
+        SystemUtility.Initialize();
 
         PhotonNetwork.NetworkingClient.EventReceived += OnEvent;
 
@@ -88,6 +89,13 @@ internal sealed class Plugin : BaseUnityPlugin
                 ConfigEntry<bool> stateEntry = Config.Bind("State", pluginInfo.Metadata.GUID, true);
                 gup._stateEntry = stateEntry;
                 gup.Enabled = stateEntry.Value;
+
+                try { gup.OnPlayerSpawned(); }
+                catch (Exception ex)
+                {
+                    Logger.LogFatal($"Error in OnPlayerSpawned method of {gup.Info.Metadata.GUID} {gup.Info.Metadata.Version}:");
+                    Logger.LogError(ex);
+                }
             }
         } 
         catch (Exception ex)
@@ -96,7 +104,8 @@ internal sealed class Plugin : BaseUnityPlugin
             Logger.LogError(ex);
         }
 
-        sharedObject = new GameObject($"{Info.Metadata.Name} {Info.Metadata.Version}", typeof(NetworkController), typeof(GameModeManager), typeof(ConductBoardManager));
+        sharedObject = new GameObject($"{Info.Metadata.Name} {Info.Metadata.Version}", typeof(NetworkController), typeof(GameModeManager));
+        if (!GameModeManager.HasUtilla) sharedObject.AddComponent<ConductBoardManager>();
         DontDestroyOnLoad(sharedObject);
 
         Events.Core.OnGameInitialized?.Invoke();

@@ -1,12 +1,13 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace GorillaLibrary.Utilities;
 
 /// <summary>
 /// Utilities for system tasks.
 /// </summary>
-public class SystemUtility
+public static class SystemUtility
 {
     /// <summary>
     /// The operating system the environment is running on.
@@ -18,7 +19,7 @@ public class SystemUtility
     /// <remarks>
     /// This substitute for Environment.GetFolderPath is designed to also work on Linux systems (UserSystem.Linux).
     /// </remarks>
-    public string GetFolderPath(Environment.SpecialFolder folder, Environment.SpecialFolderOption option = Environment.SpecialFolderOption.None)
+    public static string GetFolderPath(Environment.SpecialFolder folder, Environment.SpecialFolderOption option = Environment.SpecialFolderOption.None)
     {
         if (System == UserSystem.Windows)
             return Environment.GetFolderPath(folder, option);
@@ -82,7 +83,7 @@ public class SystemUtility
         return folderPath;
     }
 
-    private string UserFolder
+    private static string UserFolder
     {
         get
         {
@@ -100,7 +101,7 @@ public class SystemUtility
         }
     }
 
-    private string RootFolder
+    private static string RootFolder
     {
         get
         {
@@ -110,6 +111,36 @@ public class SystemUtility
             return field;
         }
     }
+
+    internal static void Initialize()
+    {
+        System = UserSystem.Unknown;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            System = UserSystem.Windows;
+
+            try
+            {
+                IntPtr ntdllHandle = GetModuleHandle("ntdll.dll");
+
+                if (ntdllHandle != IntPtr.Zero)
+                {
+                    IntPtr wineVersionProc = GetProcAddress(ntdllHandle, "wine_get_version");
+
+                    if (wineVersionProc != IntPtr.Zero)
+                        System = UserSystem.Linux;
+                }
+            }
+            catch { }
+        }
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
+    private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
+    private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 }
 
 /// <summary>

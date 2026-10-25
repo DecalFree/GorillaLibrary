@@ -25,7 +25,7 @@ public static class RigUtility
     public static NetInputTracker<bool> LeftFaceButtonTouch { get; private set; }
     public static NetInputTracker<bool> RightFaceButtonTouch { get; private set; }
 
-    public static void Initialize()
+    internal static void Initialize()
     {
         LeftGrip = new(NetInputType.Grip, true);
         RightGrip = new(NetInputType.Grip, false);
