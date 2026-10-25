@@ -6,6 +6,7 @@ namespace GorillaLibrary.Utilities;
 
 // this class used to have a replacement for Environment.GetFolderPath() but it's Linux support was janky so it has been dropped for now
 // this may appear again in the future.
+// adapted from https://github.com/sirkingbinx/cardboard/blob/master/src/Classes/UserSystem.cs#L20
 
 /// <summary>
 /// Utilities for system tasks.
@@ -14,7 +15,7 @@ public static class SystemUtility
 {
     /// <summary>
     /// The operating system the environment is running on.
-    /// Note that this also includes detection for Wine. To get proper OS-dependent pathing, use SystemUtility.GetFolderPath.
+    /// Note that this also includes detection for Wine, which will be represented as UserSystem.Linux.
     /// </summary>
     public static UserSystem System { get; internal set; }
     
