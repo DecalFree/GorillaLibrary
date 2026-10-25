@@ -8,6 +8,7 @@ using GorillaLibrary.Utilities;
 using GorillaNetworking;
 using HarmonyLib;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -49,8 +50,7 @@ internal class GameModeManager : MonoBehaviour
         Instance = this;
 
         gameModeTable = (Dictionary<int, GorillaGameManager>)AccessTools.Field(typeof(GameMode), "gameModeTable").GetValue(null);
-
-        customGameModeContainer = new GameObject("Utilla Custom Game Modes");
+        customGameModeContainer = new GameObject("GorillaLibrary Custom Game Modes"); // rip Utilla Custom Game Modes
         customGameModeContainer.transform.SetParent(((GameMode)AccessTools.Field(typeof(GameMode), "instance").GetValue(null)).gameObject.transform);
 
         string currentGameMode = PlayerPrefs.GetString(GorillaComputerPatches.ModePreferenceKey, GameModeType.Infection.ToString());
@@ -75,10 +75,133 @@ internal class GameModeManager : MonoBehaviour
         CustomGameModes = GetGamemodes(pluginInfos);
         Plugin.Logger.LogMessage($"Custom Game Modes: {string.Join(", ", CustomGameModes.Select(mode => mode.DisplayName).Select(displayName => string.Format("\"{0}\"", displayName)))}");
         Gamemodes.AddRange(ModdedGamemodes.Concat(CustomGameModes));
+        
         Gamemodes.ForEach(AddGamemodeToPrefabPool);
+        if (HasUtilla) StartCoroutine(ImportUtillaGamemodes());
+
         Plugin.Logger.LogMessage($"Game Modes: {string.Join(", ", Gamemodes.Select(mode => mode.DisplayName).Select(displayName => string.Format("\"{0}\"", displayName)))}");
 
         Initialization.SetResult(this);
+    }
+
+    internal static bool? _hasUtilla;
+
+    internal static bool HasUtilla
+    {
+        get
+        {
+            _hasUtilla ??= BootstrapUtility.IsUuidActive(Constants.UtillaGuid);
+            return (bool)_hasUtilla;
+        }
+    }
+
+    private const BindingFlags UtillaFlags = BindingFlags.Public |
+        BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+
+    private static Assembly UtillaAssembly()
+    {
+        return Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out var plugin) &&
+            plugin.Instance != null ? plugin.Instance.GetType().Assembly : null;
+    }
+
+    internal static void DeactivateUtillaSelector(Harmony harmony)
+    {
+        Assembly assembly = UtillaAssembly();
+        if (assembly == null) return;
+
+        // there are many utillas with seperate patches so we just target the uh-oh
+        // patches we know of here
+
+        string[] patchTypes =
+        [
+            "Utilla.Patches.GameModeSelectorPatch",
+            "Utilla.Patches.VirtualStumpSelectorPatch",
+            "Utilla.Patches.GorillaComputerPatches",
+            "Utilla.Patches.DesiredGameModePatches",
+            "Utilla.Patches.GameModeSearchPatch",
+            "Utilla.Patches.EnumNamePatch",
+            "Utilla.Patches.EnumParsePatch",
+            "Utilla.Patches.PropertyStringContainsModePatch",
+            "Utilla.Patches.PropertyStringSeparatorTranspiler"
+        ];
+
+        foreach (MethodBase original in Harmony.GetAllPatchedMethods().ToArray())
+        {
+            var patches = Harmony.GetPatchInfo(original);
+
+            foreach (var patch in patches.Prefixes.Concat(patches.Postfixes).Concat(patches.Transpilers).Concat(patches.Finalizers))
+            {
+                Type type = patch.PatchMethod.DeclaringType;
+
+                if (type?.Assembly == assembly && patchTypes.Contains(type.FullName))
+                    harmony.Unpatch(original, patch.PatchMethod);
+            }
+        }
+
+        Type selectorType = assembly.GetType("Utilla.Behaviours.UtillaGamemodeSelector");
+        
+        if (selectorType == null) return;
+        foreach (Behaviour selector in Resources.FindObjectsOfTypeAll(selectorType))
+            selector.enabled = false;
+    }
+
+    private IEnumerator ImportUtillaGamemodes()
+    {
+        Assembly assembly = UtillaAssembly();
+
+        if (assembly == null) yield break;
+
+        Type managerType = assembly.GetType("Utilla.Behaviours.GamemodeManager", true);
+        object initialization = Get(managerType, null, "Initialization");
+        Task task = (Task)Get(initialization.GetType(), initialization, "Task");
+
+        while (!task.IsCompleted) yield return null;
+
+        if (task.Status != TaskStatus.RanToCompletion) yield break;
+
+        object manager = Get(managerType, null, "Instance");
+
+        foreach (object mode in (IEnumerable)Get(managerType, manager, "CustomGameModes"))
+        {
+            Type type = mode.GetType();
+            string id = (string)Get(type, mode, "ID");
+
+            if (Gamemodes.Any(existing => existing.ID == id)) continue;
+
+            string name = (string)Get(type, mode, "DisplayName");
+            Type gameManager = (Type)Get(type, mode, "GameManager");
+
+            GameModeWrapper wrapper = gameManager != null
+                ? new GameModeWrapper(id, name, gameManager)
+                : new GameModeWrapper(id, name, (GameModeType?)Get(type, mode, "BaseGamemode"));
+
+            CustomGameModes.Add(wrapper);
+            Gamemodes.Add(wrapper);
+        }
+
+        foreach (GameModeSelector selector in Resources.FindObjectsOfTypeAll<GameModeSelector>())
+        {
+            selector.SelectorGameModes.Clear();
+
+            if (selector.PageCapacity <= 0) continue;
+
+            selector.PageCount = Math.Max(1, (selector.GetSelectorGameModes().Count + selector.PageCapacity - 1) / selector.PageCapacity);
+            selector.CurrentPage = 0;
+            selector.ShowPage();
+        }
+    }
+
+    private static object Get(Type type, object target, string name)
+    {
+        PropertyInfo property = type.GetProperty(name, UtillaFlags);
+        if (property != null)
+            return property.GetValue(target, null);
+
+        FieldInfo field = type.GetField(name, UtillaFlags);
+        if (field != null)
+            return field.GetValue(target);
+
+        throw new MissingMemberException(type.FullName, name);
     }
 
     public List<GameModeWrapper> GetGamemodes(List<PluginInfo> infos)

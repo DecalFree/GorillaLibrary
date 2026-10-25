@@ -6,4 +6,9 @@
 		<BepInExAssemblyPath>$(GamePath)\BepInEx\core</BepInExAssemblyPath>
 		<PluginsPath>$(GamePath)\BepInEx\plugins</PluginsPath>
 	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(CI)'=='TRUE'">
+		<GameAssemblyPath>..\Libs</GameAssemblyPath>
+		<BepInExAssemblyPath>..\Libs</BepInExAssemblyPath>
+	</PropertyGroup>
 </Project>

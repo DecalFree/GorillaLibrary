@@ -1,6 +1,7 @@
 ﻿// https://github.com/Not-A-Bird-07/Utilla/commit/c813503da35b39e63290a776af447e16a88d64c5
 
 using GorillaGameModes;
+using GorillaLibrary.Utilities;
 using HarmonyLib;
 using Photon.Pun;
 using System;
@@ -13,6 +14,18 @@ namespace GorillaLibrary.Patches;
 [HarmonyPatch(typeof(GorillaGameManager)), HarmonyWrapSafe]
 internal class GameManagerPatches
 {
+    // fixes net instantiation
+    [HarmonyPatch(nameof(GorillaGameManager.ValidGameMode)), HarmonyPrefix]
+    public static bool ValidGameModePatch(GorillaGameManager __instance, ref bool __result)
+    {
+        if (NetworkSystem.Instance == null || !NetworkSystem.Instance.InRoom ||
+            GameModeUtility.FindGameModeInString(NetworkSystem.Instance.GameModeString) is not { BaseGameMode: { } baseMode })
+            return true;
+
+        __result = __instance.GameType() == baseMode;
+        return false;
+    }
+
     [HarmonyPatch(nameof(GorillaGameManager.GameTypeName)), HarmonyPrefix]
     public static bool GameTypeNamePatch(GorillaGameManager __instance, ref string __result)
     {

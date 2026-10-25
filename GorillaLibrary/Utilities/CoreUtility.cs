@@ -12,7 +12,7 @@ public static class CoreUtility
     public static string Platform { get; private set; }
 
     /// <summary>
-    /// Whether the Gorilla Tag install is based on the Steam platform
+    /// Whether the Gorilla Tag install is based on the Steam platform.
     /// </summary>
     public static bool IsSteam => Platform == "Steam";
 

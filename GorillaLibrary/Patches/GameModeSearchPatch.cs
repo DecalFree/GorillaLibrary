@@ -8,6 +8,7 @@ internal class GameModeSearchPatch
 {
     public static bool Prefix(string gmString, ref string __result)
     {
+
         if (GameModeUtility.FindGameModeInString(gmString) is Models.GameModeWrapper gamemode)
         {
             __result = gamemode.ID;

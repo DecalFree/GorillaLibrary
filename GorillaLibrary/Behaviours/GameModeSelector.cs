@@ -48,7 +48,7 @@ namespace GorillaLibrary.Behaviours
             if (!GameModeManager.Initialization.Task.IsCompleted)
                 await GameModeManager.Initialization.Task;
 
-            Plugin.Logger.LogMessage($"UtillaGameModeSelector {Zone}");
+            Plugin.Logger.LogMessage($"GorillaLibraryGameModeSelector {Zone}");
 
             if (Active || Layout is CustomMapModeSelector)
             {

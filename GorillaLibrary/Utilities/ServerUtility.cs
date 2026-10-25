@@ -4,6 +4,7 @@ namespace GorillaLibrary.Utilities;
 
 public static class ServerUtility
 {
+    /// <summary>
     /// Gets the current Photon Cloud region code.
     /// </summary>
     /// <returns>The region code as a string.</returns>
