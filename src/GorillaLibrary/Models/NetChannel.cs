@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ExitGames.Client.Photon;
+using GorillaLibrary.Extensions;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
@@ -45,7 +46,7 @@ public sealed class NetChannel : IDisposable
             throw new Exception("You are not connected to a room.");
 
         int[] targetActorNumbers = [targetPlayer.ActorNumber];
-        object[] sendData = [Name, (int)ChannelMessageType.Unicast, targetActorNumbers, data];
+        object[] sendData = [Name, (int)ChannelMessageType.Unicast, data];
 
         RaiseEventOptions raiseEventOptions = new()
         {
@@ -76,7 +77,7 @@ public sealed class NetChannel : IDisposable
             throw new Exception("You are not connected to a room.");
 
         int[] targetActorNumbers = [.. players.Select(player => player.ActorNumber)];
-        object[] sendData = [Name, (int)ChannelMessageType.Multicast, targetActorNumbers, data];
+        object[] sendData = [Name, (int)ChannelMessageType.Multicast, data];
 
         RaiseEventOptions raiseEventOptions = new()
         {
@@ -99,22 +100,19 @@ public sealed class NetChannel : IDisposable
             throw new Exception("You are not connected to a room.");
 
         int[] targetActorNumbers = [.. NetworkSystem.Instance.PlayerListOthers.Select(player => player.ActorNumber)];
-        object[] sendData = [Name, (int)ChannelMessageType.Broadcast, targetActorNumbers, data];
+        object[] sendData = [Name, (int)ChannelMessageType.Broadcast, data];
 
         RaiseEventOptions raiseEventOptions = new()
         {
             TargetActors = targetActorNumbers
         };
 
-        if (sendSelf)
-            sendData[2] = NetworkSystem.Instance.AllNetPlayers.Select(player => player.ActorNumber).ToArray();
-
         PhotonNetwork.RaiseEvent(Constants.NetChannelEventCode, sendData, raiseEventOptions, SendOptions.SendReliable);
 
         if (!sendSelf)
             return;
 
-        OnRaiseEvent(Constants.NetChannelEventCode, sendData, NetworkSystem.Instance.LocalPlayer.ActorNumber);
+        OnRaiseEvent(Constants.NetChannelEventCode, sendData, targetActorNumbers, NetworkSystem.Instance.LocalPlayer.ActorNumber);
     }
 
     /// <inheritdoc cref="NetChannel"/>
@@ -123,10 +121,15 @@ public sealed class NetChannel : IDisposable
     {
         Name = channelName;
 
-        NetworkSystem.Instance.OnRaiseEvent += OnRaiseEvent;
+        PhotonNetwork.NetworkingClient.EventReceived += RaiseEventReceived;
     }
 
-    private void OnRaiseEvent(byte eventCode, object data, int callingActor)
+    private void RaiseEventReceived(EventData ev)
+    {
+        OnRaiseEvent(ev.Code, ev.CustomData, ev.ExtractOptions().TargetActors, ev.Sender);
+    }
+
+    private void OnRaiseEvent(byte eventCode, object data, int[] targetActors, int callingActor)
     {
         if (eventCode != Constants.NetChannelEventCode)
             return;
@@ -137,7 +140,7 @@ public sealed class NetChannel : IDisposable
         if (channelData[0] is not string channel || channel != Name)
             return;
 
-        if (!NetChannelMessage.TryCreate(channelData, callingActor, out NetChannelMessage message))
+        if (!NetChannelMessage.TryCreate(channelData, callingActor, targetActors, out NetChannelMessage message))
             return;
 
         try { OnReceivedMessage?.Invoke(message); }
@@ -150,6 +153,6 @@ public sealed class NetChannel : IDisposable
     /// <inheritdoc cref="IDisposable.Dispose"/>
     public void Dispose()
     {
-        NetworkSystem.Instance.OnRaiseEvent -= OnRaiseEvent;
+        PhotonNetwork.NetworkingClient.EventReceived -= RaiseEventReceived;
     }
 }

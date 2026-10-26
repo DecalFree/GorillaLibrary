@@ -51,11 +51,10 @@ public class NetChannelMessage
         return true;
     }
 
-    internal static bool TryCreate(object[] data, int sendingActorNumber, out NetChannelMessage message)
+    internal static bool TryCreate(object[] data, int sendingActorNumber, int[] messageTargets, out NetChannelMessage message)
     {
-        if ((data[0] is not string channelName) ||
-            (data[1] is not int messageTypeValue) ||
-            (data[2] is not int[] messageTargets))
+        if (data[0] is not string channelName ||
+            data[1] is not int messageTypeValue)
         {
             message = null;
             return false;
