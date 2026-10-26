@@ -16,7 +16,7 @@ commChannel = new NetChannel("mod-comm-channel");
 commChannel.OnReceivedMessage += OnCommChannelMessage;
 
 // Extra note: channels implement IDisposable, so you can also use them inside of `using` statements; see below
-using CardboardChannel temporaryChannel = new NetChannel("i-am-sending-something");
+using NetChannel temporaryChannel = new NetChannel("i-am-sending-something");
 
 // Here's how to send data. It does not have to be a string, it can be anything
 temporaryChannel.SendMessage("Hello world"); // Send a message to everyone
