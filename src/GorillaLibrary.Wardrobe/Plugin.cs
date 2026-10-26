@@ -36,11 +36,11 @@ public class Plugin : BaseUnityPlugin
     {
         Sections = [];
 
-        try 
+        try
         {
             foreach (var (guid, pluginInfo) in Chainloader.PluginInfos)
             {
-                var assembly = pluginInfo?.Instance?.GetType().Assembly;
+                Assembly assembly = pluginInfo?.Instance?.GetType().Assembly;
                 assembly?.GetCustomAttributes().ForEach(attribute =>
                 {
                     if (attribute is ModdedWardrobeSectionAttribute category)
@@ -49,7 +49,7 @@ public class Plugin : BaseUnityPlugin
                     }
                 });
             }
-        } 
+        }
         catch (Exception ex)
         {
             Logger.LogFatal("Exception thrown while loading wardrobe sections");
@@ -61,8 +61,8 @@ public class Plugin : BaseUnityPlugin
 
         Sections.ForEach(category =>
         {
-            var types = category.SectionTypes?.Where(type => typeof(WardrobeCategory).IsAssignableFrom(type));
-            var list = new List<WardrobeCategory>();
+            IEnumerable<Type> types = category.SectionTypes?.Where(type => typeof(WardrobeCategory).IsAssignableFrom(type));
+            List<WardrobeCategory> list = new List<WardrobeCategory>();
             types.ForEach(type => list.Add((WardrobeCategory)sharedObject.AddComponent(type)));
             category.categories = list;
         });

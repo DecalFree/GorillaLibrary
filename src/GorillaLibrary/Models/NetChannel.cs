@@ -67,7 +67,7 @@ public sealed class NetChannel : IDisposable
         if (targetPlayers == null)
             throw new ArgumentNullException(nameof(targetPlayers));
 
-        var players = targetPlayers.ToArray();
+        NetPlayer[] players = targetPlayers.ToArray();
 
         if (players.Any(n => n is null))
             throw new ArgumentNullException(nameof(targetPlayers));

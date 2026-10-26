@@ -16,7 +16,7 @@ public class ModdedGamemodeAttribute : Attribute
     {
         gamemode = null;
     }
-    
+
     /// <summary>
     /// Creates a new GameModeWrapper based on an internal id, display name, and base game mode.
     /// </summary>

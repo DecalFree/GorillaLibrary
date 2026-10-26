@@ -36,7 +36,7 @@ public static class PlayerExtensions
         string playerName = isNamePermissionEnabled ? string.IsNullOrEmpty(nickName) || string.IsNullOrWhiteSpace(nickName) ? defaultName : nickName : defaultName;
         return limitLength ? playerName.LimitLength(12) : playerName;
     }
-    
+
     /// <summary>
     /// Gets a player's account information from PlayFab.
     /// </summary>
@@ -44,9 +44,8 @@ public static class PlayerExtensions
     /// <param name="callback">The callback invoked when the account information is received.</param>
     /// <param name="maxCacheTime">Maximum age of cached account information in minutes before fetching fresh data.</param>
     /// <returns></returns>
-    public static GetAccountInfoResult GetAccountInfo(this NetPlayer netPlayer, Action<GetAccountInfoResult> callback, double maxCacheTime = double.MaxValue)
-    {
-        return PlayerUtility.GetAccountInfo(netPlayer.UserId, result =>
+    public static PlayerProfileResult GetPlayerProfile(this NetPlayer netPlayer, Action<PlayerProfileResult> callback, double maxCacheTime = double.MaxValue) {
+        return PlayerUtility.GetPlayerProfile(netPlayer.UserId, result =>
         {
             callback?.Invoke(result);
         }, maxCacheTime);
@@ -61,11 +60,11 @@ public static class PlayerExtensions
     /// <returns></returns>
     public static DateTime GetAccountCreation(this NetPlayer netPlayer, Action<DateTime> callback, double maxCacheTime = double.MaxValue)
     {
-        return PlayerUtility.GetAccountInfo(netPlayer.UserId, result =>
+        return PlayerUtility.GetPlayerProfile(netPlayer.UserId, result =>
         {
-            if (result.AccountInfo?.TitleInfo?.Created is not DateTime created) return;
+            if (result.Created is not DateTime created) return;
             callback?.Invoke(created);
-        }, maxCacheTime).AccountInfo?.TitleInfo?.Created is DateTime created ? created : DateTime.MinValue;
+        }, maxCacheTime).Created is DateTime created ? created : DateTime.MinValue;
     }
 
     /// <summary>
@@ -88,7 +87,7 @@ public static class PlayerExtensions
         GorillaGameManager gameManager = GorillaGameManager.instance;
         return gameManager != null && player.IsTagged(gameManager);
     }
-    
+
     /// <summary>
     /// Returns a bool on if the NetPlayer specified is tagged in a specified GorillaGameManager.
     /// </summary>

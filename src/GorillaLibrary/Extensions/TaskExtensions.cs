@@ -11,7 +11,7 @@ public static class TaskExtensions
 
     public static async Task AsAwaitable(this YieldInstruction instruction)
     {
-        var completionSource = new TaskCompletionSource<YieldInstruction>();
+        TaskCompletionSource<YieldInstruction> completionSource = new TaskCompletionSource<YieldInstruction>();
         IEnumerator coroutine = AwaitableRoutine(instruction, completionSource);
         Behaviour.StartCoroutine(coroutine);
         await completionSource.Task;
@@ -20,7 +20,7 @@ public static class TaskExtensions
 
     public static async Task AsAwaitable(this CustomYieldInstruction instruction)
     {
-        var completionSource = new TaskCompletionSource<CustomYieldInstruction>();
+        TaskCompletionSource<CustomYieldInstruction> completionSource = new TaskCompletionSource<CustomYieldInstruction>();
         IEnumerator coroutine = AwaitableRoutine(instruction, completionSource);
         Behaviour.StartCoroutine(coroutine);
         await completionSource.Task;

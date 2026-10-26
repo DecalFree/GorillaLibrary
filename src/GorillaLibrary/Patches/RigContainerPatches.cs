@@ -14,7 +14,7 @@ internal class RigContainerPatches
     {
         if (_dictionary.ContainsKey(__instance)) return;
 
-        var eventSource = new RigEventSource(__instance.Rig);
+        RigEventSource eventSource = new RigEventSource(__instance.Rig);
         __instance.Rig.OnColorChanged += eventSource.OnColourUpdated;
         _dictionary.Add(__instance, eventSource);
 
@@ -24,7 +24,7 @@ internal class RigContainerPatches
     [HarmonyPatch("OnDisable"), HarmonyPostfix]
     public static void RigRemovedPatch(RigContainer __instance)
     {
-        if (_dictionary.TryGetValue(__instance, out var eventSource))
+        if (_dictionary.TryGetValue(__instance, out RigEventSource eventSource))
         {
             __instance.Rig.OnColorChanged -= eventSource.OnColourUpdated;
             _dictionary.Remove(__instance);

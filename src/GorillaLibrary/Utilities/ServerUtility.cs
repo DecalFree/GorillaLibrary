@@ -15,7 +15,7 @@ public static class ServerUtility
     /// </summary>
     /// <returns>The human-readable name of the current region.</returns>
     public static string GetRegionName() => GetRegionNameFromCode(GetRegionCode());
-    
+
     /// <summary>
     /// Gets the display name associated with a Photon Cloud region code.
     /// </summary>

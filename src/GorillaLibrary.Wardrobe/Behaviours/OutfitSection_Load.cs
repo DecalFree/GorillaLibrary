@@ -15,8 +15,8 @@ internal class OutfitSection_Load : WardrobeCategory
 
     public override void ApplyCosmetic(CosmeticWardrobeSelection selection, int index)
     {
-        var outfits = instance.savedOutfits;
-        var outfit = index != SelectedOutfit ? outfits[index] : instance.currentWornSet;
+        CosmeticSet[] outfits = instance.savedOutfits;
+        CosmeticSet outfit = index != SelectedOutfit ? outfits[index] : instance.currentWornSet;
 
         selection.displayHead.SetCosmeticActiveArray([.. outfit.items.Select(item => item.displayName)], outfit.ToOnRightSideArray());
         selection.selectButton.enabled = true;

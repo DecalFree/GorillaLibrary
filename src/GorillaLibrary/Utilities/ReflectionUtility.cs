@@ -23,12 +23,12 @@ public static class ReflectionUtility
     /// <returns>A list of activated instances of the interface.</returns>
     public static T[] GetInstancesOfInterface<T>(IEnumerable<Assembly> assemblyPool)
     {
-        var types = assemblyPool.SelectMany(assembly => assembly.GetTypes())
+        IEnumerable<Type> types = assemblyPool.SelectMany(assembly => assembly.GetTypes())
             .Where(type => typeof(T).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract);
 
-        var typeInstances = new List<T>();
+        List<T> typeInstances = new List<T>();
 
-        foreach (var type in types)
+        foreach (Type type in types)
         {
             if (Activator.CreateInstance(type) is not T typeInstance)
                 continue;
@@ -47,13 +47,13 @@ public static class ReflectionUtility
     /// <returns>A list of tuples (T1, T2) for each type and attribute.</returns>
     public static (T1, T2)[] GetInstancesOfTypeWithAttribute<T1, T2>() where T1 : Attribute
     {
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-        var types = assemblies.SelectMany(assembly => assembly.GetTypes())
+        Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        IEnumerable<Type> types = assemblies.SelectMany(assembly => assembly.GetTypes())
             .Where(type => typeof(T2).IsAssignableFrom(type) && type.GetCustomAttributes<T1>(true).Any() && !type.IsInterface && !type.IsAbstract);
 
-        var typeInstances = new List<(T1, T2)>();
+        List<(T1, T2)> typeInstances = new List<(T1, T2)>();
 
-        foreach (var type in types)
+        foreach (Type type in types)
         {
             if (Activator.CreateInstance(type) is not T2 typeInstance)
                 continue;

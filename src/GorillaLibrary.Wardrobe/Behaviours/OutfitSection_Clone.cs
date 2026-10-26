@@ -17,8 +17,8 @@ internal class OutfitSection_Clone : WardrobeCategory
 
     public override void ApplyCosmetic(CosmeticWardrobeSelection selection, int index)
     {
-        var outfits = instance.savedOutfits;
-        var outfit = index != SelectedOutfit ? outfits[index] : instance.currentWornSet;
+        CosmeticSet[] outfits = instance.savedOutfits;
+        CosmeticSet outfit = index != SelectedOutfit ? outfits[index] : instance.currentWornSet;
 
         selection.displayHead.SetCosmeticActiveArray([.. outfit.items.Select(item => item.displayName)], outfit.ToOnRightSideArray());
         selection.selectButton.enabled = true;
@@ -28,10 +28,10 @@ internal class OutfitSection_Clone : WardrobeCategory
 
     public override void SelectCosmetic(int index)
     {
-        var outfits = instance.savedOutfits;
+        CosmeticSet[] outfits = instance.savedOutfits;
         outfits[index].CopyItems(instance.currentWornSet);
 
-        var colours = instance.savedColors;
+        Vector3[] colours = instance.savedColors;
         colours[index] = new Vector3(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b);
 
         instance.SetField("selectedOutfit", SelectedOutfit);
@@ -53,10 +53,10 @@ internal class OutfitSection_Clone : WardrobeCategory
 
             for (int i = 0; i < size; i++)
             {
-                var outfits = instance.GetField<CosmeticSet[]>("savedOutfits");
+                CosmeticSet[] outfits = instance.GetField<CosmeticSet[]>("savedOutfits");
                 outfits[i].CopyItems(instance.currentWornSet);
 
-                var colours = instance.GetField<Vector3[]>("savedColors");
+                Vector3[] colours = instance.GetField<Vector3[]>("savedColors");
                 colours[i] = new Vector3(VRRig.LocalRig.playerColor.r, VRRig.LocalRig.playerColor.g, VRRig.LocalRig.playerColor.b);
             }
 
