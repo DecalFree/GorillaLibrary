@@ -25,7 +25,7 @@ internal class EnumParsePatch
         }
 
         EnumData<GameModeType> shared = EnumData<GameModeType>.Shared;
-        __result = shared.NameToEnum.TryGetValue(value, out var gameMode) ? gameMode : GameModeType.Infection;
+        __result = shared.NameToEnum.TryGetValue(value, out GameModeType gameMode) ? gameMode : GameModeType.Infection;
 
         return false;
     }

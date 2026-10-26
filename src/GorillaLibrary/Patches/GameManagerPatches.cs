@@ -31,7 +31,7 @@ internal class GameManagerPatches
     {
         if (Enum.IsDefined(typeof(GameModeType), (int)__instance.GameType())) return true;
 
-        var gameModeTable = (Dictionary<int, GorillaGameManager>)AccessTools.Field(typeof(GameMode), "gameModeTable").GetValue(null);
+        Dictionary<int, GorillaGameManager> gameModeTable = (Dictionary<int, GorillaGameManager>)AccessTools.Field(typeof(GameMode), "gameModeTable").GetValue(null);
         int index = gameModeTable.LastOrDefault(pair => pair.Value == __instance).Key;
         __result = GameMode.gameModeKeyByName.LastOrDefault(pair => pair.Value == index).Key;
 

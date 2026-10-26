@@ -17,7 +17,7 @@ public static class WebSocketUtility
     public static Action<WebSocketData, Exception> OnError;
 
     private static readonly Dictionary<string, WebSocketData> _data = [];
-    
+
     /// <summary>
     /// Connects to a WebSocket server.
     /// </summary>
@@ -28,7 +28,7 @@ public static class WebSocketUtility
     {
         Uri uri = new(url);
 
-        if (!_data.TryGetValue(url, out var data))
+        if (!_data.TryGetValue(url, out WebSocketData data))
         {
             data = new(new ClientWebSocket(), CancellationTokenSource.CreateLinkedTokenSource(cancellationToken));
             _data.TryAdd(url, data);
@@ -53,11 +53,11 @@ public static class WebSocketUtility
 
     private static async Task ReceiveMessagesAsync(WebSocketData data)
     {
-        var buffer = new byte[1024 * 4];
+        byte[] buffer = new byte[1024 * 4];
 
         while (data.Socket.State == WebSocketState.Open)
         {
-            var result = await data.Socket.ReceiveAsync(new ArraySegment<byte>(buffer), data.CancellationSource.Token);
+            WebSocketReceiveResult result = await data.Socket.ReceiveAsync(new ArraySegment<byte>(buffer), data.CancellationSource.Token);
 
             switch (result.MessageType)
             {
@@ -65,21 +65,21 @@ public static class WebSocketUtility
                     string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                     try
                     {
-                        var obj = JObject.Parse(message);
-                        var type = obj["type"].ToString();
+                        JObject obj = JObject.Parse(message);
+                        string type = obj["type"].ToString();
 
                         if (!string.IsNullOrEmpty(type))
                         {
                             List<Action<JObject>> handlersCopy = null;
 
-                            if (data.Subscribers.TryGetValue(type, out var handlers))
+                            if (data.Subscribers.TryGetValue(type, out List<Action<JObject>> handlers))
                             {
                                 handlersCopy = [.. handlers];
                             }
 
                             if (handlersCopy != null)
                             {
-                                foreach (var handler in handlersCopy)
+                                foreach (Action<JObject> handler in handlersCopy)
                                 {
                                     await Task.Run(() =>
                                     {
@@ -118,12 +118,12 @@ public static class WebSocketUtility
     {
         if (data == null || !data.IsConnected) return;
 
-        var message = new JObject
+        JObject message = new JObject
         {
             ["payload"] = payload == null ? JValue.CreateNull() : JToken.FromObject(payload)
         };
 
-        var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
+        byte[] bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
         await data.Socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, cancellationToken).ConfigureAwait(false);
     }
 
@@ -138,7 +138,7 @@ public static class WebSocketUtility
         if (string.IsNullOrEmpty(messageType)) return;
         if (handler == null) return;
 
-        if (!data.Subscribers.TryGetValue(messageType, out var list))
+        if (!data.Subscribers.TryGetValue(messageType, out List<Action<JObject>> list))
         {
             list = [];
             data.Subscribers.TryAdd(messageType, list);
@@ -158,7 +158,7 @@ public static class WebSocketUtility
         if (string.IsNullOrEmpty(messageType)) return;
         if (handler == null) return;
 
-        if (data.Subscribers.TryGetValue(messageType, out var list))
+        if (data.Subscribers.TryGetValue(messageType, out List<Action<JObject>> list))
         {
             list.RemoveAll(h => h == handler);
             data.Subscribers.Remove(messageType);

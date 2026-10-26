@@ -8,7 +8,7 @@ internal class InternalRoom
     public bool IsPrivate { get; set; }
 
     /// <summary>
-    /// The gamemode that the current lobby is 
+    /// The gamemode that the current lobby is
     /// </summary>
     public string Gamemode { get; set; }
 }

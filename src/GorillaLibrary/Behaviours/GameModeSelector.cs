@@ -163,7 +163,7 @@ namespace GorillaLibrary.Behaviours
                 return;
             }
 
-            var modeNames = GetSelectorGameModes().Where(mode => mode != null).Select(mode => mode.ID).ToArray();
+            string[] modeNames = GetSelectorGameModes().Where(mode => mode != null).Select(mode => mode.ID).ToArray();
             int index = Array.IndexOf(modeNames, currentMode);
 
             if (index == -1)
@@ -191,7 +191,7 @@ namespace GorillaLibrary.Behaviours
 
             GorillaComputer.instance.SetGameModeWithoutButton(defaultMode);
 
-            var modeNames = GetSelectorGameModes().Select(game_mode => game_mode != null ? game_mode.ID : string.Empty).ToArray();
+            string[] modeNames = GetSelectorGameModes().Select(game_mode => game_mode != null ? game_mode.ID : string.Empty).ToArray();
             int index = Array.IndexOf(modeNames, defaultMode);
             CurrentPage = Mathf.Max(Mathf.FloorToInt(index / (float)PageCapacity), 0);
             Plugin.Logger.LogMessage($"Set to {defaultMode} on page {CurrentPage}");
@@ -255,7 +255,7 @@ namespace GorillaLibrary.Behaviours
                 // button location
                 button.transform.parent = templateButton.transform.parent;
                 button.transform.localRotation = templateButton.transform.localRotation;
-                button.transform.localScale = Vector3.one * 0.1427168f; // shouldn't hurt anyone for now 
+                button.transform.localScale = Vector3.one * 0.1427168f; // shouldn't hurt anyone for now
 
                 TMP_Text tmpText = button.transform.Find("Title")?.GetComponent<TMP_Text>() ?? button.GetComponentInChildren<TMP_Text>(true);
                 if (tmpText)
@@ -278,9 +278,9 @@ namespace GorillaLibrary.Behaviours
 
                 // button behaviour
                 Destroy(button.GetComponent<ModeSelectButton>());
-                var unityEvent = new UnityEvent();
+                UnityEvent unityEvent = new UnityEvent();
                 unityEvent.AddListener(new UnityAction(onPressed));
-                var pressable_button = button.AddComponent<GorillaPressableButton>();
+                GorillaPressableButton pressable_button = button.AddComponent<GorillaPressableButton>();
                 pressable_button.onPressButton = unityEvent;
 
                 if (button.transform.Find("NewSplash") is Transform splash && splash && splash.gameObject.activeSelf)
@@ -309,7 +309,7 @@ namespace GorillaLibrary.Behaviours
         {
             PageCapacity = currentButtons.Count(button => button.gameObject.activeSelf);
 
-            foreach (var mb in currentButtons)
+            foreach (ModeSelectButton mb in currentButtons)
             {
                 if (moddedSelectionButtons.Contains(mb)) continue;
                 moddedSelectionButtons.Add(mb);

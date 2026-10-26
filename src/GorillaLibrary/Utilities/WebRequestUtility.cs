@@ -1,6 +1,7 @@
 ﻿using GorillaLibrary.Models;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using UnityEngine.Networking;
@@ -83,7 +84,7 @@ public static class WebRequestUtility
 
                 if (model.Headers != null)
                 {
-                    foreach (var header in model.Headers)
+                    foreach (KeyValuePair<string, string> header in model.Headers)
                     {
                         request.SetRequestHeader(header.Key, header.Value);
                     }

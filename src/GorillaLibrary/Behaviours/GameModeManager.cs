@@ -75,7 +75,7 @@ internal class GameModeManager : MonoBehaviour
         CustomGameModes = GetGamemodes(pluginInfos);
         Plugin.Logger.LogMessage($"Custom Game Modes: {string.Join(", ", CustomGameModes.Select(mode => mode.DisplayName).Select(displayName => string.Format("\"{0}\"", displayName)))}");
         Gamemodes.AddRange(ModdedGamemodes.Concat(CustomGameModes));
-        
+
         Gamemodes.ForEach(AddGamemodeToPrefabPool);
         if (HasUtilla) StartCoroutine(ImportUtillaGamemodes());
 
@@ -100,7 +100,7 @@ internal class GameModeManager : MonoBehaviour
 
     private static Assembly UtillaAssembly()
     {
-        return Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out var plugin) &&
+        return Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out BepInEx.PluginInfo plugin) &&
             plugin.Instance != null ? plugin.Instance.GetType().Assembly : null;
     }
 
@@ -127,9 +127,9 @@ internal class GameModeManager : MonoBehaviour
 
         foreach (MethodBase original in Harmony.GetAllPatchedMethods().ToArray())
         {
-            var patches = Harmony.GetPatchInfo(original);
+            HarmonyLib.Patches patches = Harmony.GetPatchInfo(original);
 
-            foreach (var patch in patches.Prefixes.Concat(patches.Postfixes).Concat(patches.Transpilers).Concat(patches.Finalizers))
+            foreach (Patch patch in patches.Prefixes.Concat(patches.Postfixes).Concat(patches.Transpilers).Concat(patches.Finalizers))
             {
                 Type type = patch.PatchMethod.DeclaringType;
 
@@ -139,7 +139,7 @@ internal class GameModeManager : MonoBehaviour
         }
 
         Type selectorType = assembly.GetType("Utilla.Behaviours.UtillaGamemodeSelector");
-        
+
         if (selectorType == null) return;
         foreach (Behaviour selector in Resources.FindObjectsOfTypeAll(selectorType))
             selector.enabled = false;
@@ -209,12 +209,12 @@ internal class GameModeManager : MonoBehaviour
         List<GameModeWrapper> gamemodes = [];
 
         HashSet<GameModeWrapper> additonalGamemodes = [];
-        foreach (var info in infos)
+        foreach (PluginInfo info in infos)
         {
             additonalGamemodes.UnionWith(info.Gamemodes);
         }
 
-        foreach (var gamemode in ModdedGamemodes)
+        foreach (GameModeWrapper gamemode in ModdedGamemodes)
         {
             additonalGamemodes.Remove(gamemode);
         }
@@ -228,7 +228,7 @@ internal class GameModeManager : MonoBehaviour
     {
         List<PluginInfo> infos = [];
 
-        foreach (var info in Chainloader.PluginInfos)
+        foreach (KeyValuePair<string, BepInEx.PluginInfo> info in Chainloader.PluginInfos)
         {
             if (info.Value is null) continue;
             BaseUnityPlugin plugin = info.Value.Instance;
@@ -260,9 +260,9 @@ internal class GameModeManager : MonoBehaviour
         BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
         Action<string> action = null;
-        foreach (var method in baseType.GetMethods(bindingFlags).Where(m => m.GetCustomAttribute(attribute) != null))
+        foreach (MethodInfo method in baseType.GetMethods(bindingFlags).Where(m => m.GetCustomAttribute(attribute) != null))
         {
-            var parameters = method.GetParameters();
+            ParameterInfo[] parameters = method.GetParameters();
             MethodCallExpression methodCall;
             if (parameters.Length == 0)
             {
@@ -375,7 +375,7 @@ internal class GameModeManager : MonoBehaviour
 
         Plugin.Logger.LogMessage($"Joined room: with game mode {gamemode}");
 
-        foreach (var pluginInfo in pluginInfos)
+        foreach (PluginInfo pluginInfo in pluginInfos)
         {
             Plugin.Logger.LogMessage($"Plugin {pluginInfo}");
 
@@ -404,7 +404,7 @@ internal class GameModeManager : MonoBehaviour
 
         Plugin.Logger.LogMessage($"Left room: with game mode {gamemode}");
 
-        foreach (var pluginInfo in pluginInfos)
+        foreach (PluginInfo pluginInfo in pluginInfos)
         {
             if (pluginInfo.Gamemodes.Any(x => gamemode.Contains(x.ID)))
             {

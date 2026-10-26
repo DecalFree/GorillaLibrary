@@ -18,7 +18,7 @@ public static class SystemUtility
     /// Note that this also includes detection for Wine, which will be represented as UserSystem.Linux.
     /// </summary>
     public static UserSystem System { get; internal set; }
-    
+
     internal static void Initialize()
     {
         System = UserSystem.Unknown;

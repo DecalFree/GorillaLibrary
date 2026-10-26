@@ -16,7 +16,7 @@ public static class RigExtensions
     {
         return (float)AccessTools.Field(typeof(VRRig), "lastScaleFactor").GetValue(rig);
     }
-    
+
     public static void GetCosmetics(this VRRig rig, out CosmeticSet currentWornSet, out CosmeticSet tryOnSet)
     {
         currentWornSet = rig.cosmeticSet;

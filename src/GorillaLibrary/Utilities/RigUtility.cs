@@ -61,7 +61,7 @@ public static class RigUtility
         rig = (RigContainer)parameters[1];
         return result;
     }
-    
+
     /// <summary>
     /// Gets the rig associated with a network player.
     /// </summary>

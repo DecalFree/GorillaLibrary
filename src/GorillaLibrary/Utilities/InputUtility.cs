@@ -35,8 +35,8 @@ public static class InputUtility
         LeftController = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
         RightController = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
 
-        var poller = Traverse.Create(ControllerInputPoller.instance);
-        var pollerExt = Traverse.Create(new ControllerInputPollerExt());
+        Traverse poller = Traverse.Create(ControllerInputPoller.instance);
+        Traverse pollerExt = Traverse.Create(new ControllerInputPollerExt());
 
         LeftGrip = new InputTracker<float>(poller.Field("leftControllerGripFloat"), XRNode.LeftHand);
         RightGrip = new InputTracker<float>(poller.Field("rightControllerGripFloat"), XRNode.RightHand);
@@ -70,7 +70,7 @@ public static class InputUtility
     internal static void Update()
     {
         ControllerInputPollerExt.Instance.Update();
-        foreach (var input in _inputTrackers) input.UpdateValues();
+        foreach (InputTracker input in _inputTrackers) input.UpdateValues();
     }
 
     // https://github.com/developer9998/Bark/blob/76e893492845b620c6567be68f6e14bf0cbd49ba/Interaction/GestureTracker.cs#L387

@@ -62,12 +62,12 @@ public class WardrobeController : MonoBehaviour
 
         if (_outfitText.IsObjectNull() || _nextOutfit.IsObjectNull() || _previousOutfit.IsObjectNull()) return;
 
-        var baseCategories = Plugin.Sections;
+        List<ModdedWardrobeSectionAttribute> baseCategories = Plugin.Sections;
         _categories = baseCategories != null && baseCategories.Count > 0 ? [null, .. baseCategories] : [];
 
         OnOutfitTextUpdate();
 
-        var cosmeticCategoryButtons = _cosmeticWardrobe.GetField<CosmeticWardrobeCategory[]>("cosmeticCategoryButtons");
+        CosmeticWardrobeCategory[] cosmeticCategoryButtons = _cosmeticWardrobe.GetField<CosmeticWardrobeCategory[]>("cosmeticCategoryButtons");
         template = cosmeticCategoryButtons.FirstOrDefault(category =>
         {
             CosmeticCategoryButton button = category.button;
@@ -75,9 +75,9 @@ public class WardrobeController : MonoBehaviour
         });
         categoryButtonParent = template.button.transform.parent.gameObject;
 
-        foreach (var category in cosmeticCategoryButtons)
+        foreach (CosmeticWardrobeCategory category in cosmeticCategoryButtons)
         {
-            var button = category.button;
+            CosmeticCategoryButton button = category.button;
             baseObjects.Add(button.GetField<SpriteRenderer>("equippedIcon")?.gameObject);
             baseObjects.Add(button.GetField<SpriteRenderer>("equippedLeftIcon")?.gameObject);
             baseObjects.Add(button.GetField<SpriteRenderer>("equippedRightIcon")?.gameObject);
@@ -103,16 +103,16 @@ public class WardrobeController : MonoBehaviour
 
         List<CosmeticCategoryButton> buttons = [];
 
-        foreach (var category in _categories)
+        foreach (ModdedWardrobeSectionAttribute category in _categories)
         {
             if (category == null) continue;
 
             physicalData.Add(category, new());
 
-            var objects = new List<GameObject>();
+            List<GameObject> objects = new List<GameObject>();
             physicalData[category].objects = objects;
 
-            var buttonsInCategory = new List<CosmeticCategoryButton>();
+            List<CosmeticCategoryButton> buttonsInCategory = new List<CosmeticCategoryButton>();
             physicalData[category].buttons = buttonsInCategory;
 
             List<Tuple<GameObject, GameObject, CosmeticCategoryButton>> elements = [];
@@ -121,7 +121,7 @@ public class WardrobeController : MonoBehaviour
             {
                 if (i >= 5) break;
 
-                var section = category.categories[i];
+                WardrobeCategory section = category.categories[i];
 
                 GameObject buttonContainer = new("ButtonContainer");
                 buttonContainer.transform.SetParent(customButtonStorage.transform);
@@ -170,7 +170,7 @@ public class WardrobeController : MonoBehaviour
 
             await Awaitable.EndOfFrameAsync();
 
-            foreach (var tuple in elements)
+            foreach (Tuple<GameObject, GameObject, CosmeticCategoryButton> tuple in elements)
             {
                 Vector3 initialOffset = tuple.Item1.transform.position - template.button.transform.position;
                 tuple.Item2.transform.position = initialOffset + tuple.Item3.transform.position;
@@ -186,7 +186,7 @@ public class WardrobeController : MonoBehaviour
 
         await Awaitable.EndOfFrameAsync();
 
-        foreach (var button in buttons)
+        foreach (CosmeticCategoryButton button in buttons)
         {
             button.SetField("startingPos", button.transform.localPosition);
             button.UpdateColor();
@@ -277,11 +277,11 @@ public class WardrobeController : MonoBehaviour
     {
         for (int i = 0; i < physicalData[_currentAttribute].buttons.Count; i++)
         {
-            var button = physicalData[_currentAttribute].buttons[i];
+            CosmeticCategoryButton button = physicalData[_currentAttribute].buttons[i];
 
             if (button == baseButton)
             {
-                var previousSection = _currentAttribute.categories[physicalData[_currentAttribute].buttons.IndexOf(physicalData[_currentAttribute].selectedButton)];
+                WardrobeCategory previousSection = _currentAttribute.categories[physicalData[_currentAttribute].buttons.IndexOf(physicalData[_currentAttribute].selectedButton)];
 
                 _currentAttribute.categories[i].OnActivated(physicalData[_currentAttribute].selectedButton == button);
                 physicalData[_currentAttribute].selectedButton = button;
@@ -314,8 +314,8 @@ public class WardrobeController : MonoBehaviour
     {
         for (int i = 0; i < physicalData[_currentAttribute].buttons.Count; i++)
         {
-            var button = physicalData[_currentAttribute].buttons[i];
-            var section = _currentAttribute.categories[i];
+            CosmeticCategoryButton button = physicalData[_currentAttribute].buttons[i];
+            WardrobeCategory section = _currentAttribute.categories[i];
             Tuple<Sprite, Sprite, Sprite> tuple = icons.ContainsKey(section) ? icons[section] : Tuple.Create<Sprite, Sprite, Sprite>(null, null, null);
 
             if (tuple.Item1 != null) button.SetIcon(tuple.Item1);
@@ -331,7 +331,7 @@ public class WardrobeController : MonoBehaviour
 
     internal void HandlePageNavigate()
     {
-        var lastAttribute = _currentAttribute;
+        ModdedWardrobeSectionAttribute lastAttribute = _currentAttribute;
         _currentAttribute = _categories[_categoryIndex];
 
         baseObjects.Where(gameObject => gameObject.IsObjectExistent()).ForEach(gameObject => gameObject.SetActive(_currentAttribute == null));

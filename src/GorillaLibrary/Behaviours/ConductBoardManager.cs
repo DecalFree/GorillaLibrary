@@ -9,7 +9,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
+using BepInEx;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -35,17 +37,17 @@ internal class ConductBoardManager : MonoBehaviour
 
     internal static void DisableUtillaVersionText(Harmony harmony)
     {
-        if (!Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out var plugin) ||
+        if (!Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out BepInEx.PluginInfo plugin) ||
             plugin.Instance == null) return;
 
         Type managerType = plugin.Instance.GetType().Assembly.GetType("Utilla.Behaviours.VersionCheckManager");
         if (managerType == null) return;
 
-        var start = AccessTools.Method(managerType, "Start");
+        MethodInfo start = AccessTools.Method(managerType, "Start");
         if (start != null)
             harmony.Patch(start, prefix: new HarmonyMethod(typeof(ConductBoardManager), nameof(SkipUtillaVersionText)));
 
-        var footerField = AccessTools.Field(managerType, "footerText");
+        FieldInfo footerField = AccessTools.Field(managerType, "footerText");
         foreach (Behaviour manager in Resources.FindObjectsOfTypeAll(managerType))
         {
             manager.enabled = false;
@@ -73,7 +75,7 @@ internal class ConductBoardManager : MonoBehaviour
 
         oldHeaderText.gameObject.SetActive(false);
         baseHeaderText.text = oldHeaderText.text;
-        
+
         GameObject headingTextObject = Instantiate(baseHeaderText.gameObject);
         headingTextObject.transform.position = baseHeaderText.transform.position;
         headingTextObject.transform.rotation = baseHeaderText.transform.rotation;
@@ -91,7 +93,7 @@ internal class ConductBoardManager : MonoBehaviour
         footerTextObject.transform.localScale = baseHeaderText.transform.localScale;
         SanitizeTextObject(footerTextObject);
 
-        var info = Plugin.Instance.Info.Metadata;
+        BepInPlugin info = Plugin.Instance.Info.Metadata;
         footerText = footerTextObject.GetComponent<TextMeshPro>();
         footerText.text = $"{info.Name} {info.Version}".ToUpper();
         footerText.enableAutoSizing = false;
@@ -101,7 +103,7 @@ internal class ConductBoardManager : MonoBehaviour
         footerText.enabled = true;
         footerText.renderer.enabled = true;
 
-        if (Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out var utillaPlugin))
+        if (Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out BepInEx.PluginInfo utillaPlugin))
             footerText.text += $" (UT {utillaPlugin.Metadata.Version})";
 
         baseBodyText = stumpRootObject.transform.FindChildRecursive("HeadOutside")?.GetComponent<TextMeshPro>();
@@ -232,7 +234,7 @@ internal class ConductBoardManager : MonoBehaviour
         string version = (string)JsonConvert.DeserializeObject<Dictionary<string, object>>(webRequest.downloadHandler.text)["tag_name"];
         Plugin.Logger.LogMessage($"GorillaLibrary is on Version {version}");
 
-        var info = Plugin.Instance.Info.Metadata;
+        BepInPlugin info = Plugin.Instance.Info.Metadata;
         Version installedVersion = info.Version;
         if (Version.TryParse(version, out Version latestVersion) && latestVersion > installedVersion)
         {
@@ -240,7 +242,7 @@ internal class ConductBoardManager : MonoBehaviour
             footerText.fontSize *= 0.85f;
             footerText.text += $"{info.Name} {info.Version} - Out Of Date".ToUpper();
 
-            if (Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out var utillaPlugin))
+            if (Chainloader.PluginInfos.TryGetValue(Constants.UtillaGuid, out BepInEx.PluginInfo utillaPlugin))
                 footerText.text += $" (UT {utillaPlugin.Metadata.Version})";
         }
     }
